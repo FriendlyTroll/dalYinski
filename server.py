@@ -15,9 +15,9 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen()
 
+while True:
     # Get new socket object from accept(). This is different from the listening socket above.
     # This one is used to communicate with the client
-while True:
     conn, addr = s.accept()
     print('Connected by', addr)
     data = conn.recv(1024).decode("utf-8")
@@ -36,12 +36,19 @@ while True:
         try:
             bro.find_element_by_class_name("ytp-play-button").click()
         except exceptions.NoSuchElementException as e:
-            # find "Play all" thumbnail then
+            # find "Play all" thumbnail then in "Watch later" playlist
             bro.find_element_by_xpath("//img[@id='img'][@width='357']").click()
     elif "watchlater" in data:
         print('watchlater received')
-        # BUG: finding elements by link text doesn't work if the window is made smaller than half of screen beacuse only icons for navigation are then shown
-        bro.find_element_by_link_text("Watch later").click()
+        # Handle cases when finding elements doesn't work if the window is made smaller than half of screen beacuse only icons for navigation are then shown or just the hamburger icon is shown
+        try:
+            # normal situation where elements are visible
+            bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@title='Watch later']").click()
+        except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException) as e:
+            # hamburger only is visible
+            bro.find_element_by_xpath("//button[@id='button'][@aria-label='Guide']").click() # hamburger element
+            time.sleep(1) # wait a bit
+            bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@title='Watch later']").click() # Watch later element
     elif "playnext" in data:
         print('playnext received')
         bro.find_element_by_class_name("ytp-next-button.ytp-button").click()
@@ -53,9 +60,12 @@ while True:
             # mini player is opened, fullscreen it
             bro.find_element_by_class_name("ytp-miniplayer-expand-watch-page-button.ytp-button.ytp-miniplayer-button-top-left").click()
     elif "gohome" in data:
-        # BUG: doesn't work from fullscreen video -> selenium.common.exceptions.ElementNotInteractableException: Message: Element <a id="logo" class="yt-simple-endpoint style-scope ytd-topbar-logo-renderer" href="/"> could not be scrolled into view
         print('gohome received')
-        bro.find_element_by_class_name("yt-simple-endpoint.style-scope.ytd-topbar-logo-renderer").click()
+        try:
+            bro.find_element_by_class_name("yt-simple-endpoint.style-scope.ytd-topbar-logo-renderer").click()
+        except exceptions.ElementNotInteractableException as e:
+            # TODO: add functionality
+            pass
     elif not data:
         print('No data received')
     conn.sendall(b'Hi from server')
