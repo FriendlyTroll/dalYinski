@@ -67,13 +67,13 @@ class MainApp(App):
 
         return main_layout
 
-    def on_press_open_browser(self, instance):
-        c = RemofoyClient()
-        c.command(b'fbro')
-
     def on_press_send_ping(self, instance):
         c = RemofoyClient()
         c.command(b'ping')
+
+    def on_press_open_browser(self, instance):
+        c = RemofoyClient()
+        c.command(b'fbro')
 
     def on_press_play_pause(self, instance):
         c = RemofoyClient()
