@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import socket
-from selenium import webdriver
-from selenium.common import exceptions
 import time
 import threading
 
+from selenium import webdriver
+from selenium.common import exceptions
+
 # local imports
-from browser import FFBrowser
+from .browser import FFBrowser
 
 
 ### Helper func ###
