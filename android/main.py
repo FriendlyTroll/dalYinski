@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 
+__version__ = '0.2'
+
+import threading
+
 from kivy.app import App
 from kivy.uix.button import Button
+from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
+from kivy.clock import Clock
+from kivy.uix.popup import Popup
 
 # local imports
-from .client import RemofoyClient
+from client import DalyinskiClient
 
 class MainApp(App):
     def build(self):
-        # TODO: add icon to app
         main_layout = BoxLayout(orientation='vertical',
                                 spacing=5)
 
         btn_ping = Button(text='Send ping',
                 size_hint=(0.8, 0.8),
-                pos_hint={'center_x': .5, 'center_y': .5},
-                background_color=(0,1,0,1))
+                pos_hint={'center_x': .5, 'center_y': .5})
         btn_ping.bind(on_press=self.on_press_send_ping)
         
 
@@ -67,35 +72,57 @@ class MainApp(App):
 
         return main_layout
 
-    def on_press_send_ping(self, instance):
-        c = RemofoyClient()
+    def show_popup(self, message='Info'):
+        self.popup = Popup(title='Info',
+            content=Label(text=message),
+            size_hint=(None, None), size=(400, 200))
+        return self.popup
+
+    # private function to call with threading, to prevent gui blocking
+    def _on_press_send_ping(self, instance):
+        p = self.show_popup('Discovering server.\nPlease wait...')
+        p.open() # Open the popup
+        c = DalyinskiClient()
         c.command(b'ping')
+        p.dismiss() # Close popup after we send the inital ping packet
+
+    # threading function to call the "real" function
+    def on_press_send_ping(self, instance):
+        t = threading.Thread(target=self._on_press_send_ping, args=(instance,))
+        t.start()
+
+    def _on_press_open_browser(self, instance):
+        p = self.show_popup('Opening web browser...')
+        p.open()
+        c = DalyinskiClient()
+        c.command(b'fbro')
+        p.dismiss()
 
     def on_press_open_browser(self, instance):
-        c = RemofoyClient()
-        c.command(b'fbro')
+        t = threading.Thread(target=self._on_press_open_browser, args=(instance,))
+        t.start()
 
     def on_press_play_pause(self, instance):
-        c = RemofoyClient()
+        c = DalyinskiClient()
         c.command(b'playpause')
 
     def on_press_watch_later(self, instance):
-        c = RemofoyClient()
+        c = DalyinskiClient()
         c.command(b'watchlater')
 
     def on_press_go_home(self, instance):
-        c = RemofoyClient()
+        c = DalyinskiClient()
         c.command(b'gohome')
 
     def on_press_play_next(self, instance):
-        c = RemofoyClient()
+        c = DalyinskiClient()
         c.command(b'playnext')
 
     def on_press_fullscreen(self, instance):
-        c = RemofoyClient()
+        c = DalyinskiClient()
         c.command(b'fullscreen')
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     app = MainApp()
     app.run()

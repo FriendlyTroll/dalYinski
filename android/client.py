@@ -4,9 +4,9 @@ import socket
 
 HOST = '' # The server's hostname or IP address
 PORT = 65432       # The port on which the server is listening
-MAGIC = 'remofoymagicpkt'
+MAGIC = 'dalyinskimagicpkt'
 
-class RemofoyClient:
+class DalyinskiClient:
     def __init__(self):
         # find out the ip address of the server
         global HOST
