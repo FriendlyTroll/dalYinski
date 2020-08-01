@@ -8,7 +8,7 @@ from selenium import webdriver
 from selenium.common import exceptions
 
 # local imports
-from .browser import FFBrowser
+from browser import FFBrowser
 
 
 ### Helper func ###
@@ -20,7 +20,7 @@ def get_ip_address():
 
 HOST = get_ip_address()
 PORT = 65432
-MAGIC = 'remofoymagicpkt'
+MAGIC = 'dalyinskimagicpkt'
 
 
 ### Announcement service ###
@@ -42,61 +42,80 @@ def server_conn():
     s.listen()
     
     while True:
-         # Get new socket object from accept(). This is different from the listening socket above.
-         # This one is used to communicate with the client
-         conn, addr = s.accept()
-         print('Connected by', addr)
-         data = conn.recv(1024).decode("utf-8")
-         if "ping" in data:
-             print('ping received')
-         elif "fbro" in data:
-             print('fbro received')
-             # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
-             fp = webdriver.FirefoxProfile("/home/antisa/.mozilla/firefox/ne44ra9s.selenium/")
-             bro = webdriver.Firefox(fp)
-             bro.install_addon("/home/antisa/Downloads/ublock_origin-1.28.2-an+fx.xpi")
-             bro.get("https://www.youtube.com/")
-             # BUG: playpause not working when there is a mini player
-         elif "playpause" in data:
-             print('play/pause received')
-             try:
-                 bro.find_element_by_class_name("ytp-play-button").click()
-             except exceptions.NoSuchElementException as e:
-                 # find "Play all" thumbnail then in "Watch later" playlist
-                 bro.find_element_by_xpath("//img[@id='img'][@width='357']").click()
-         elif "watchlater" in data:
-             print('watchlater received')
-             # Handle cases when finding elements doesn't work if the window is made smaller than half of screen beacuse only icons for navigation are then shown or just the hamburger icon is shown
-             try:
-                 # normal situation where elements are visible
-                 bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@title='Watch later']").click()
-             except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException) as e:
-                 # hamburger only is visible
-                 bro.find_element_by_xpath("//button[@id='button'][@aria-label='Guide']").click() # hamburger element
-                 time.sleep(1) # wait a bit
-                 bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@title='Watch later']").click() # Watch later element
-         elif "playnext" in data:
-             print('playnext received')
-             bro.find_element_by_class_name("ytp-next-button.ytp-button").click()
-         elif "fullscreen" in data:
-             print('fullscreen received')
-             try:
-                 bro.find_element_by_class_name("ytp-fullscreen-button.ytp-button").click()
-             except exceptions.ElementNotInteractableException as e:
-                 # mini player is opened, fullscreen it
-                 bro.find_element_by_class_name("ytp-miniplayer-expand-watch-page-button.ytp-button.ytp-miniplayer-button-top-left").click()
-         elif "gohome" in data:
-             print('gohome received')
-             try:
-                 bro.find_element_by_class_name("yt-simple-endpoint.style-scope.ytd-topbar-logo-renderer").click()
-             except exceptions.ElementNotInteractableException as e:
-                 # TODO: add functionality
-                 pass
-         elif not data:
-             print('No data received')
-         conn.sendall(b'Hi from server')
-    s.close()
+       try:
+            # Get new socket object from accept(). This is different from the listening socket above.
+            # This one is used to communicate with the client
+            conn, addr = s.accept()
+            print('Connected by', addr)
+            data = conn.recv(1024).decode("utf-8")
+            if "ping" in data:
+                print('ping received')
+            elif "fbro" in data:
+                print('fbro received')
+                # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
+                fp = webdriver.FirefoxProfile("/home/antisa/.mozilla/firefox/ne44ra9s.selenium/")
+                bro = webdriver.Firefox(fp)
+                bro.install_addon("/home/antisa/Downloads/ublock_origin-1.28.2-an+fx.xpi")
+                bro.get("https://www.youtube.com/")
+                # BUG: playpause not working when there is a mini player
+            elif "playpause" in data:
+                print('play/pause received')
+                try:
+                    bro.find_element_by_class_name("ytp-play-button").click()
+                except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                    try:
+                        # find "Play all" thumbnail then in "Watch later" playlist
+                        bro.find_element_by_xpath("//img[@id='img'][@width='357']").click()
+                    # no element at all
+                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                        print(e)
+            elif "watchlater" in data:
+                print('watchlater received')
+                # Handle cases when finding elements doesn't work if the window is made smaller than half of screen beacuse only icons for navigation are then shown or just the hamburger icon is shown
+                try:
+                    # normal situation where elements are visible
+                    bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@title='Watch later']").click()
+                except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException) as e:
+                    # hamburger only is visible
+                    bro.find_element_by_xpath("//button[@id='button'][@aria-label='Guide']").click() # hamburger element
+                    time.sleep(1) # wait a bit
+                    bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@title='Watch later']").click() # Watch later element
+            elif "playnext" in data:
+                print('playnext received')
+                try:
+                    bro.find_element_by_class_name("ytp-next-button.ytp-button").click()
+                except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                    print(e)
+            elif "fullscreen" in data:
+                print('fullscreen received')
+                try:
+                    bro.find_element_by_class_name("ytp-fullscreen-button.ytp-button").click()
+                except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                    # mini player is opened, fullscreen it
+                    try:
+                        bro.find_element_by_class_name("ytp-miniplayer-expand-watch-page-button.ytp-button.ytp-miniplayer-button-top-left").click()
+                    # no element at all
+                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                        print(e)
+            elif "gohome" in data:
+                print('gohome received')
+                try:
+                    bro.find_element_by_class_name("yt-simple-endpoint.style-scope.ytd-topbar-logo-renderer").click()
+                except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                    print(e)
+            elif "captions" in data:
+                try:
+                   bro.find_element_by_xpath("//button[@aria-label='Subtitles/closed captions (c)']").click()
+                except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException) as e:
+                    print(e)
+            elif not data:
+                print('No data received')
+            conn.sendall(b'Hi from server')
 
+        # catch scenario where bro variable is not defined because user maybe clicked some other button before opening the webbrowser
+       except UnboundLocalError as e:
+           print(e)
+    s.close()
 
 # Spawn 2 threads, one for ip discovery other for server itself. The broadcasting thread is spawned as daemon because we don't want the main loop to wait for it to finish when exiting the program
 bcast_t = threading.Thread(target=broadcastip, daemon=True)
