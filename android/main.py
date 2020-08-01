@@ -18,8 +18,10 @@ class MainApp(App):
     def build(self):
         main_layout = BoxLayout(orientation='vertical',
                                 spacing=5)
+        horizontal_layout_1 = BoxLayout(orientation='horizontal',
+                                        spacing=5)
 
-        btn_ping = Button(text='Send ping',
+        btn_ping = Button(text='Connect to server',
                 size_hint=(0.8, 0.8),
                 pos_hint={'center_x': .5, 'center_y': .5})
         btn_ping.bind(on_press=self.on_press_send_ping)
@@ -61,21 +63,31 @@ class MainApp(App):
                 pos_hint={'center_x': .5, 'center_y': .5},
                 background_color=(0,1,0,1))
         btn_fullscreen.bind(on_press=self.on_press_fullscreen)
+
+        btn_captions = Button(text='Closed captions On/off',
+                size_hint=(0.8, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
+        btn_captions.bind(on_press=self.on_press_captions)
+
+        horizontal_layout_1.add_widget(btn_captions)
+        horizontal_layout_1.add_widget(btn_go_home)
         
         main_layout.add_widget(btn_ping)
         main_layout.add_widget(btn_open_browser)
         main_layout.add_widget(btn_watch_later)
         main_layout.add_widget(btn_play_pause)
-        main_layout.add_widget(btn_go_home)
+        main_layout.add_widget(horizontal_layout_1)
         main_layout.add_widget(btn_play_next)
         main_layout.add_widget(btn_fullscreen)
 
+        
         return main_layout
 
     def show_popup(self, message='Info'):
         self.popup = Popup(title='Info',
             content=Label(text=message),
-            size_hint=(None, None), size=(400, 200))
+            size_hint=(None, None), size=(400, 200),
+            auto_dismiss=False)
         return self.popup
 
     # private function to call with threading, to prevent gui blocking
@@ -122,6 +134,9 @@ class MainApp(App):
         c = DalyinskiClient()
         c.command(b'fullscreen')
 
+    def on_press_captions(self, instance):
+        c = DalyinskiClient()
+        c.command(b'captions')
 
 if __name__ == '__main__':
     app = MainApp()
