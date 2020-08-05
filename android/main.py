@@ -18,8 +18,12 @@ class MainApp(App):
     def build(self):
         main_layout = BoxLayout(orientation='vertical',
                                 spacing=5)
-        horizontal_layout_1 = BoxLayout(orientation='horizontal',
-                                        spacing=5)
+        cpt_tab_home_lyt = BoxLayout(orientation='horizontal',
+                                        spacing=2)
+        playback_btns_lyt = BoxLayout(orientation='horizontal',
+                                        spacing=2)
+
+
 
         btn_ping = Button(text='Connect to server',
                 size_hint=(0.8, 0.8),
@@ -40,10 +44,16 @@ class MainApp(App):
                 background_color=(0,1,0,1))
         btn_watch_later.bind(on_press=self.on_press_watch_later)
 
-        btn_play_pause = Button(text='Play/Pause',
+        btn_play_previous = Button(text='Play Previous',
                 size_hint=(0.8, 0.8),
                 pos_hint={'center_x': .5, 'center_y': .5},
                 background_color=(0,1,0,1))
+        btn_play_previous.bind(on_press=self.on_press_play_previous)
+
+        btn_play_pause = Button(text='Play/Pause',
+                size_hint=(0.8, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5},
+                background_color=(0.47,0.80,1,1))
         btn_play_pause.bind(on_press=self.on_press_play_pause)
         
         btn_play_next = Button(text='Play Next',
@@ -69,15 +79,26 @@ class MainApp(App):
                 pos_hint={'center_x': .5, 'center_y': .5})
         btn_captions.bind(on_press=self.on_press_captions)
 
-        horizontal_layout_1.add_widget(btn_captions)
-        horizontal_layout_1.add_widget(btn_go_home)
+        btn_switch_tab = Button(text='Switch tab',
+                size_hint=(0.8, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
+        btn_switch_tab.bind(on_press=self.on_press_switch_tab)
+
+        playback_btns_lyt.add_widget(btn_play_pause)
+        playback_btns_lyt.add_widget(btn_play_previous)
+        playback_btns_lyt.add_widget(btn_play_next)
+
+        cpt_tab_home_lyt.add_widget(btn_captions)
+        cpt_tab_home_lyt.add_widget(btn_go_home)
+        cpt_tab_home_lyt.add_widget(btn_switch_tab)
         
         main_layout.add_widget(btn_ping)
         main_layout.add_widget(btn_open_browser)
         main_layout.add_widget(btn_watch_later)
-        main_layout.add_widget(btn_play_pause)
-        main_layout.add_widget(horizontal_layout_1)
-        main_layout.add_widget(btn_play_next)
+        main_layout.add_widget(cpt_tab_home_lyt)
+
+        # playback buttons
+        main_layout.add_widget(playback_btns_lyt)
         main_layout.add_widget(btn_fullscreen)
 
         
@@ -86,7 +107,7 @@ class MainApp(App):
     def show_popup(self, message='Info'):
         self.popup = Popup(title='Info',
             content=Label(text=message),
-            size_hint=(None, None), size=(400, 200),
+            size_hint=(None, None), size=(600, 400),
             auto_dismiss=False)
         return self.popup
 
@@ -114,9 +135,17 @@ class MainApp(App):
         t = threading.Thread(target=self._on_press_open_browser, args=(instance,))
         t.start()
 
+    def on_press_play_previous(self, instance):
+        c = DalyinskiClient()
+        c.command(b'playprevious')
+
     def on_press_play_pause(self, instance):
         c = DalyinskiClient()
         c.command(b'playpause')
+
+    def on_press_play_next(self, instance):
+        c = DalyinskiClient()
+        c.command(b'playnext')
 
     def on_press_watch_later(self, instance):
         c = DalyinskiClient()
@@ -126,10 +155,6 @@ class MainApp(App):
         c = DalyinskiClient()
         c.command(b'gohome')
 
-    def on_press_play_next(self, instance):
-        c = DalyinskiClient()
-        c.command(b'playnext')
-
     def on_press_fullscreen(self, instance):
         c = DalyinskiClient()
         c.command(b'fullscreen')
@@ -137,6 +162,10 @@ class MainApp(App):
     def on_press_captions(self, instance):
         c = DalyinskiClient()
         c.command(b'captions')
+
+    def on_press_switch_tab(self, instance):
+        c = DalyinskiClient()
+        c.command(b'switchtab')
 
 if __name__ == '__main__':
     app = MainApp()
