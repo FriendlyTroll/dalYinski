@@ -3,17 +3,20 @@
 import socket
 import time
 import threading
+from itertools import cycle
 
 from selenium import webdriver
 from selenium.common import exceptions
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 
 # local imports
 from browser import FFBrowser
 
 
-### Helper func ###
-# gets the local ip address of pc where this server is running as socket.gethostname() returns a useless 127.0.0.1
 def get_ip_address():
+    ''' gets the local ip address of pc where this server is running
+    as socket.gethostname() returns a useless 127.0.0.1 '''
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     return s.getsockname()[0]
@@ -22,9 +25,8 @@ HOST = get_ip_address()
 PORT = 65432
 MAGIC = 'dalyinskimagicpkt'
 
-
-### Announcement service ###
 def broadcastip():
+    ''' Announcement service '''
     while True:
         sudp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # create udp socket
         sudp.bind(('', 0))
@@ -34,6 +36,22 @@ def broadcastip():
         print('Sent service announcement')
         time.sleep(5)
 
+li = 0
+def change_tab(webdrv):
+    ''' Get current tab and loop through a list of tabs. Increment list index and try to get next tab
+        and set that as current tab. Else end of list has been reached so reset
+        the index to start of list i.e. first tab'''
+    global li
+    current_tab = webdrv.current_window_handle
+    for handle in webdrv.window_handles:
+        try:
+            li += 1
+            current_tab = webdrv.window_handles[li]
+            return current_tab
+        except IndexError:
+            li = 0
+            current_tab = webdrv.window_handles[li]
+            return current_tab
 
 ### Main workhorse ###
 def server_conn():
@@ -43,8 +61,8 @@ def server_conn():
     
     while True:
        try:
-            # Get new socket object from accept(). This is different from the listening socket above.
-            # This one is used to communicate with the client
+            ''' Get new socket object from accept(). This is different from the listening socket above.
+            This one is used to communicate with the client '''
             conn, addr = s.accept()
             print('Connected by', addr)
             data = conn.recv(1024).decode("utf-8")
@@ -108,6 +126,10 @@ def server_conn():
                    bro.find_element_by_xpath("//button[@aria-label='Subtitles/closed captions (c)']").click()
                 except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException) as e:
                     print(e)
+            elif "switchtab" in data:
+                print('switchtab received')
+                next_tab = change_tab(bro)
+                bro.switch_to.window(next_tab)
             elif not data:
                 print('No data received')
             conn.sendall(b'Hi from server')
