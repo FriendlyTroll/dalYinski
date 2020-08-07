@@ -3,12 +3,10 @@
 import socket
 import time
 import threading
-from itertools import cycle
 
 from selenium import webdriver
 from selenium.common import exceptions
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
 
 # local imports
 from browser import FFBrowser
@@ -71,11 +69,12 @@ def server_conn():
             elif "fbro" in data:
                 print('fbro received')
                 # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
-                fp = webdriver.FirefoxProfile("/home/antisa/.mozilla/firefox/ne44ra9s.selenium/")
+                fp = webdriver.FirefoxProfile("/home/antisa/.mozilla/firefox/ne44ra9s.selenium")
                 bro = webdriver.Firefox(fp)
-                bro.install_addon("/home/antisa/Downloads/ublock_origin-1.28.2-an+fx.xpi")
+                # TODO: add disable lazy loading of tabs for correct tab switching - set_preference()?
+                bro.install_addon("/home/antisa/.mozilla/firefox/ne44ra9s.selenium/extensions/uBlock0@raymondhill.net.xpi")
+                bro.fullscreen_window()
                 bro.get("https://www.youtube.com/")
-                # BUG: playpause not working when there is a mini player
             elif "playpause" in data:
                 print('play/pause received')
                 try:
@@ -92,12 +91,12 @@ def server_conn():
                 # Handle cases when finding elements doesn't work if the window is made smaller than half of screen beacuse only icons for navigation are then shown or just the hamburger icon is shown
                 try:
                     # normal situation where elements are visible
-                    bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@title='Watch later']").click()
+                    bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@href='/playlist?list=WL']").click() 
                 except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException) as e:
                     # hamburger only is visible
                     bro.find_element_by_xpath("//button[@id='button'][@aria-label='Guide']").click() # hamburger element
                     time.sleep(1) # wait a bit
-                    bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@title='Watch later']").click() # Watch later element
+                    bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@href='/playlist?list=WL']").click() # Watch later element
             elif "playnext" in data:
                 print('playnext received')
                 try:
@@ -128,6 +127,7 @@ def server_conn():
                     print(e)
             elif "switchtab" in data:
                 print('switchtab received')
+                print(bro.window_handles)
                 next_tab = change_tab(bro)
                 bro.switch_to.window(next_tab)
             elif not data:
@@ -144,6 +144,6 @@ bcast_t = threading.Thread(target=broadcastip, daemon=True)
 main_t = threading.Thread(target=server_conn)
 
 if __name__ == '__main__':
-    # start the threads
-    bcast_t.start()
-    main_t.start()
+       # start the threads
+       bcast_t.start()
+       main_t.start()
