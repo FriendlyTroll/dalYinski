@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.3'
+__version__ = '0.4'
 
 import threading
 
@@ -8,16 +8,16 @@ from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
-from kivy.clock import Clock
 from kivy.uix.popup import Popup
 
 # local imports
 from client import DalyinskiClient
 
+
 class MainApp(App):
     def build(self):
         main_layout = BoxLayout(orientation='vertical',
-                                spacing=5)
+                                spacing=2)
         cpt_tab_home_lyt = BoxLayout(orientation='horizontal',
                                         spacing=2)
         playback_btns_lyt = BoxLayout(orientation='horizontal',
@@ -26,55 +26,47 @@ class MainApp(App):
 
 
         btn_ping = Button(text='Connect to server',
-                size_hint=(0.8, 0.8),
+                size_hint=(0.9, 0.8),
                 pos_hint={'center_x': .5, 'center_y': .5})
         btn_ping.bind(on_press=self.on_press_send_ping)
         
 
         btn_open_browser = Button(text='Open Firefox',
-                size_hint=(0.8, 0.8),
-                pos_hint={'center_x': .5, 'center_y': .5},
-                background_color=(1,.30,.30,1))
+                size_hint=(0.9, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
         btn_open_browser.bind(on_press=self.on_press_open_browser)
 
-
         btn_watch_later = Button(text='Watch later',
-                size_hint=(0.8, 0.8),
-                pos_hint={'center_x': .5, 'center_y': .5},
-                background_color=(0,1,0,1))
+                size_hint=(0.9, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
         btn_watch_later.bind(on_press=self.on_press_watch_later)
 
-        btn_play_previous = Button(text='Play Previous',
-                size_hint=(0.8, 0.8),
-                pos_hint={'center_x': .5, 'center_y': .5},
-                background_color=(0,1,0,1))
+        btn_play_previous = Button(text='Play Previous', 
+                size_hint=(0.4, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
         btn_play_previous.bind(on_press=self.on_press_play_previous)
 
         btn_play_pause = Button(text='Play/Pause',
-                size_hint=(0.8, 0.8),
-                pos_hint={'center_x': .5, 'center_y': .5},
-                background_color=(0.47,0.80,1,1))
+                size_hint=(0.8, 1),
+                pos_hint={'center_x': .5, 'center_y': .5})
         btn_play_pause.bind(on_press=self.on_press_play_pause)
         
         btn_play_next = Button(text='Play Next',
-                size_hint=(0.8, 0.8),
-                pos_hint={'center_x': .5, 'center_y': .5},
-                background_color=(0,1,0,1))
+                size_hint=(0.4, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
         btn_play_next.bind(on_press=self.on_press_play_next)
         
         btn_go_home = Button(text='Go Home',
                 size_hint=(0.8, 0.8),
-                pos_hint={'center_x': .5, 'center_y': .5},
-                background_color=(0,1,0,1))
+                pos_hint={'center_x': .5, 'center_y': .5})
         btn_go_home.bind(on_press=self.on_press_go_home)
         
         btn_fullscreen = Button(text='Fullscreen',
-                size_hint=(0.8, 0.8),
-                pos_hint={'center_x': .5, 'center_y': .5},
-                background_color=(0,1,0,1))
+                size_hint=(0.9, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
         btn_fullscreen.bind(on_press=self.on_press_fullscreen)
 
-        btn_captions = Button(text='Closed captions On/off',
+        btn_captions = Button(text='Captions On/off',
                 size_hint=(0.8, 0.8),
                 pos_hint={'center_x': .5, 'center_y': .5})
         btn_captions.bind(on_press=self.on_press_captions)
@@ -84,8 +76,8 @@ class MainApp(App):
                 pos_hint={'center_x': .5, 'center_y': .5})
         btn_switch_tab.bind(on_press=self.on_press_switch_tab)
 
-        playback_btns_lyt.add_widget(btn_play_pause)
         playback_btns_lyt.add_widget(btn_play_previous)
+        playback_btns_lyt.add_widget(btn_play_pause)
         playback_btns_lyt.add_widget(btn_play_next)
 
         cpt_tab_home_lyt.add_widget(btn_captions)
@@ -107,7 +99,7 @@ class MainApp(App):
     def show_popup(self, message='Info'):
         self.popup = Popup(title='Info',
             content=Label(text=message),
-            size_hint=(None, None), size=(600, 400),
+            size_hint=(0.8, 0.8), size=(600, 400),
             auto_dismiss=False)
         return self.popup
 
