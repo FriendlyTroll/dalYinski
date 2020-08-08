@@ -73,7 +73,7 @@ def server_conn():
                 bro = webdriver.Firefox(fp)
                 # TODO: add disable lazy loading of tabs for correct tab switching - set_preference()?
                 bro.install_addon("/home/antisa/.mozilla/firefox/ne44ra9s.selenium/extensions/uBlock0@raymondhill.net.xpi")
-                bro.fullscreen_window()
+                # bro.fullscreen_window()
                 bro.get("https://www.youtube.com/")
             elif "playpause" in data:
                 print('play/pause received')
@@ -101,6 +101,12 @@ def server_conn():
                 print('playnext received')
                 try:
                     bro.find_element_by_class_name("ytp-next-button.ytp-button").click()
+                except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                    print(e)
+            elif "playprevious" in data:
+                print('playprevious received')
+                try:
+                    bro.find_element_by_class_name("ytp-prev-button.ytp-button").click()
                 except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
                     print(e)
             elif "fullscreen" in data:
