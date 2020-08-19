@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=dalYinski
+Comment=Youtube remote!
+Exec=/usr/bin/dalyinski-server
+Icon=/home/antisa/Python/dalYinski/android/data/BW_YouTube_icon.png
+Path=/home/antisa
+Terminal=false
+StartupNotify=false
+Name[en_US]=dalYinski
