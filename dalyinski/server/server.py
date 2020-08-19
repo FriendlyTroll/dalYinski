@@ -9,8 +9,8 @@ from selenium.common import exceptions
 from selenium.webdriver.common.keys import Keys
 
 # local imports
-from server.browser import FFBrowser
-
+from dalyinski.server.browser import FFBrowser
+# TODO: remove hardcoded paths
 class ServerConn:
     def __init__(self):
         self.HOST = self.get_ip_address()
