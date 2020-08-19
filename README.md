@@ -8,3 +8,6 @@ to pin them if you want them to be available in the controlled browser.
 # Icon
 
 "File:B&W YouTube icon.png" by Rodrigo.Argenton is licensed under CC0 1.0
+
+# Dependencies
+- Python 3.7.8
