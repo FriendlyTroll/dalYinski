@@ -4,7 +4,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
-from server.server import ServerConn
+from dalyinski.server.server import ServerConn
 
 
 class Win (Gtk.Window):
