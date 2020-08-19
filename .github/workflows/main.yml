@@ -27,4 +27,8 @@ jobs:
     - name: Build deb package
       run: bash create_deb.sh 0.4
 
+    # Download all artifacts to current working directory
+    - uses: actions/download-artifact@v2
+
+
  
