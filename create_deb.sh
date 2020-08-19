@@ -20,8 +20,11 @@ APP_DIR=debian-pkg/dalyinski-${VERSION}
 BINARY_SRC=dist/dalyinski-server
 BINARY_DST=${APP_DIR}/usr/bin/
 
-
 echo "[*] Copy scripts to packaging dir"
+if [[ ! -d ${APP_DIR}/usr/lib/python3/dist-packages/ ]]
+then
+    mkdir -p ${APP_DIR}/usr/lib/python3/dist-packages/
+fi
 cp -r dalyinski ${APP_DIR}/usr/lib/python3/dist-packages/
 cp dalyinski-server ${APP_DIR}/usr/bin/
 
