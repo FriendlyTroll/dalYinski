@@ -17,13 +17,10 @@ MarkupSafe==1.1.1
 pep517==0.6.0
 pexpect==4.8.0
 ptyprocess==0.6.0
-pycairo==1.19.1
 Pygments==2.6.1
-PyGObject==3.36.1
 PyInstaller==3.6
 pytoml==0.1.21
 requests==2.24.0
-selenium==3.141.0
 sh==1.13.1
 six==1.15.0
 toml==0.10.1
