@@ -28,13 +28,13 @@ jobs:
 
     # Runs a single command using the runners shell
     - name: Build deb package
-      run: bash create_deb.sh 0.5
+      run: bash create_deb.sh 0.4
 
     # Upload artifacts to Github
     - uses: actions/upload-artifact@v2
       with:
-          name: dalyinski-0.5
-          path: dalyinski-0.5.deb
+          name: dalyinski-0.4
+          path: dalyinski-0.4.deb
 
 
  
