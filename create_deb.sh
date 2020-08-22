@@ -14,17 +14,24 @@ then
 
 fi
 
-OLD_VERSION=$(basename $PWD | awk -F\- '{ print $2 }')
 VERSION="$1"
+OLD_VERSION=$(ls debian-pkg/ | awk -F\- '{ print $2 }')
 APP_DIR=debian-pkg/dalyinski-${VERSION}
+APP_DIR_OLD=debian-pkg/dalyinski-${OLD_VERSION}
 BINARY_SRC=dist/dalyinski-server
 BINARY_DST=${APP_DIR}/usr/bin/
+
+echo "[*] Update version string in .desktop, Debian control file and github workflow files"
+sed -i "/Version/s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" ${APP_DIR_OLD}/usr/share/applications/dalYinski.desktop
+sed -i "/Version/s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" ${APP_DIR_OLD}/DEBIAN/control
+sed -i "s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" .github/workflows/main.yml
 
 echo "[*] Copy scripts to packaging dir"
 if [[ ! -d ${APP_DIR}/usr/lib/python3/dist-packages/ ]]
 then
     mkdir -p ${APP_DIR}/usr/lib/python3/dist-packages/
 fi
+cp -r ${APP_DIR_OLD}/* ${APP_DIR}
 cp -r dalyinski ${APP_DIR}/usr/lib/python3/dist-packages/
 cp dalyinski-server ${APP_DIR}/usr/bin/
 
@@ -61,3 +68,4 @@ if [[ -d ${APP_DIR}/usr/lib/python3/dist-packages/dalyinski ]]
 then
     sudo rm -rf ${APP_DIR}/usr/lib/python3/dist-packages/dalyinski
 fi
+rm -rf ${APP_DIR_OLD}
