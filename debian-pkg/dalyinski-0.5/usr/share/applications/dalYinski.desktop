@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=0.5
+Type=Application
+Name=dalYinski
+Comment=Youtube remote!
+Exec=/usr/bin/dalyinski-server
+Icon=/usr/share/pixmaps/dalyinski-server.png
+Terminal=false
+StartupNotify=true
+Categories=Xfce;GNOME;GTK;Network;
+Keywords=Youtube;youtube;remote;
