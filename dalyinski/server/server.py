@@ -13,7 +13,7 @@ from selenium.webdriver.common.keys import Keys
 
 # local imports
 from dalyinski.server.browser import FFBrowser
-# TODO: remove hardcoded paths
+
 class ServerConn:
     def __init__(self):
         self.HOST = self.get_ip_address()
@@ -80,17 +80,24 @@ class ServerConn:
                print('Connected by', self.addr)
                self.data = self.conn.recv(1024).decode("utf-8")
                if "ping" in self.data:
-                   print('ping received')
+                    print('ping received')
                elif "fbro" in self.data:
-                   print('fbro received')
-                   # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
-                   # self.fp = webdriver.FirefoxProfile("/home/antisa/.mozilla/firefox/ne44ra9s.selenium")
-                   self.fp = webdriver.FirefoxProfile(self.browser_profile())
-                   self.bro = webdriver.Firefox(self.fp)
-                   # TODO: add disable lazy loading of tabs for correct tab switching - set_preference()?
-                   self.bro.install_addon("/home/antisa/.mozilla/firefox/ne44ra9s.selenium/extensions/uBlock0@raymondhill.net.xpi")
-                   # bro.fullscreen_window()
-                   self.bro.get("https://www.youtube.com/")
+                    print('fbro received')
+                    # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
+                    # self.fp = webdriver.FirefoxProfile("/home/antisa/.mozilla/firefox/ne44ra9s.selenium")
+                    self.fp = webdriver.FirefoxProfile(self.browser_profile())
+                    self.bro = webdriver.Firefox(self.fp)
+                    # TODO: add disable lazy loading of tabs for correct tab switching - set_preference()?
+                    # Install ublock origin if it exists
+                    try:
+                        self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
+                        if self.ublock_ext:
+                            print("Installing uBlock Origin...")
+                            self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
+                    except FileNotFoundError:
+                        print("No uBlock Origin extension found")
+                    # bro.fullscreen_window()
+                    self.bro.get("https://www.youtube.com/")
                elif "playpause" in self.data:
                     print('play/pause received')
                     try:
