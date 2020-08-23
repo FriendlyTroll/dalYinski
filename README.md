@@ -11,3 +11,6 @@ to pin them if you want them to be available in the controlled browser.
 
 # Dependencies
 - Python 3.7.8
+
+## For GUI
+- python3-gi python3-gi-cairo gir1.2-gtk-3.0 python3-selenium
