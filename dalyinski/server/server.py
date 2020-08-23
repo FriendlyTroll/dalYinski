@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
+__version__ = '0.4'
+
 import socket
 import time
 import threading
+import os
 
 from selenium import webdriver
 from selenium.common import exceptions
@@ -17,6 +20,15 @@ class ServerConn:
         self.PORT = 65432
         self.MAGIC = 'dalyinskimagicpkt'
         self.li = 0 # index used for change_tab()
+    
+    def browser_profile(self):
+        ''' Find the selenium profile directory '''
+        self.mozilla_dir = os.path.join(os.environ["HOME"], '.mozilla/firefox')
+        for folder in os.listdir(self.mozilla_dir):
+            if (folder.find("selenium") != -1):
+                self.selenium_dir = folder
+        self.mozilla_dir = os.path.join(self.mozilla_dir, self.selenium_dir)
+        return self.mozilla_dir
 
     def get_ip_address(self):
         ''' Gets the local ip address of pc where this server is running
@@ -26,7 +38,6 @@ class ServerConn:
         local_ip = self.local_s.getsockname()[0]
         self.local_s.close()
         return local_ip
-    
     
     def broadcastip(self):
         ''' Announcement service. Sends UDP packets on network with MAGIC word + host ip. '''
@@ -73,23 +84,28 @@ class ServerConn:
                elif "fbro" in self.data:
                    print('fbro received')
                    # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
-                   self.fp = webdriver.FirefoxProfile("/home/antisa/.mozilla/firefox/ne44ra9s.selenium")
+                   # self.fp = webdriver.FirefoxProfile("/home/antisa/.mozilla/firefox/ne44ra9s.selenium")
+                   self.fp = webdriver.FirefoxProfile(self.browser_profile())
                    self.bro = webdriver.Firefox(self.fp)
                    # TODO: add disable lazy loading of tabs for correct tab switching - set_preference()?
                    self.bro.install_addon("/home/antisa/.mozilla/firefox/ne44ra9s.selenium/extensions/uBlock0@raymondhill.net.xpi")
                    # bro.fullscreen_window()
                    self.bro.get("https://www.youtube.com/")
                elif "playpause" in self.data:
-                   print('play/pause received')
-                   try:
-                       self.bro.find_element_by_class_name("ytp-play-button").click()
-                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
-                       try:
-                           # find "Play all" thumbnail then in "Watch later" playlist
-                           self.bro.find_element_by_xpath("//img[@id='img'][@width='357']").click()
-                       # no element at all
-                       except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
-                           print(e)
+                    print('play/pause received')
+                    try:
+                        self.bro.find_element_by_class_name("ytp-play-button").click()
+                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                        try:
+                            # find "Play all" thumbnail then in "Watch later" playlist
+                            self.bro.find_element_by_xpath("//img[@id='img'][@width='357']").click()
+                        # no element at all
+                        except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                            print(e)
+                    try:
+                        self.bro.find_element_by_xpath("//yt-button-renderer[@id='confirm-button']").click() # that annoying "Still watching?" popup
+                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                        print(e)
                elif "watchlater" in self.data:
                    print('watchlater received')
                    # Handle cases when finding elements doesn't work if the window is made smaller than half of screen beacuse only icons for navigation are then shown or just the hamburger icon is shown
