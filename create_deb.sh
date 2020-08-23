@@ -33,7 +33,7 @@ then
 fi
 cp -r ${APP_DIR_OLD}/* ${APP_DIR}
 cp -r dalyinski ${APP_DIR}/usr/lib/python3/dist-packages/
-cp dalyinski-server ${APP_DIR}/usr/bin/
+cp dalyinski-server.py ${APP_DIR}/usr/bin/dalyinski-server
 
 
 # echo "[*] Building the binary..."
