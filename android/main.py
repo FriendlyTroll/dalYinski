@@ -9,6 +9,7 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
+from kivy.graphics import Rectangle
 
 # local imports
 from client import DalyinskiClient
@@ -22,6 +23,15 @@ class MainApp(App):
                                         spacing=2)
         playback_btns_lyt = BoxLayout(orientation='horizontal',
                                         spacing=2)
+
+
+        # This will only draw a rectangle at the layout’s initial position and size.
+        # To make sure the rect is drawn inside the layout, when the layout size/pos changes, we need to listen to any changes and update the rectangles size and pos.
+        with main_layout.canvas.before:
+            self.rect = Rectangle(size=main_layout.size,
+                                  pos=main_layout.pos,
+                                  source='./data/background.png')
+        main_layout.bind(size=self._update_rect, pos=self._update_rect)
 
 
 
@@ -96,6 +106,13 @@ class MainApp(App):
         
         return main_layout
 
+    
+    def _update_rect(self, instance, value):
+        ''' Update rectangle position for drawing background '''
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
+
+
     def show_popup(self, message='Info'):
         self.popup = Popup(title='Info',
             content=Label(text=message),
@@ -103,16 +120,16 @@ class MainApp(App):
             auto_dismiss=False)
         return self.popup
 
-    # private function to call with threading, to prevent gui blocking
     def _on_press_send_ping(self, instance):
+        ''' Private function to call with threading, to prevent gui blocking '''
         p = self.show_popup('Discovering server.\nPlease wait...')
         p.open() # Open the popup
         c = DalyinskiClient()
         c.command(b'ping')
         p.dismiss() # Close popup after we send the inital ping packet
 
-    # threading function to call the "real" function
     def on_press_send_ping(self, instance):
+        ''' Threading function to call the "real" function '''
         t = threading.Thread(target=self._on_press_send_ping, args=(instance,))
         t.start()
 
