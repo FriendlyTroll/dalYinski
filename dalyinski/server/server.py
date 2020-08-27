@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.4'
+__version__ = '0.5'
 
 import socket
 import time
@@ -9,6 +9,7 @@ import os
 
 from selenium import webdriver
 from selenium.common import exceptions
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 
 # local imports
@@ -163,6 +164,18 @@ class ServerConn:
                    print(self.bro.window_handles)
                    next_tab = self.change_tab(self.bro)
                    self.bro.switch_to.window(next_tab)
+               elif "fforward" in self.data:
+                   print('fforward received')
+                   try:
+                       ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_tag_name('body'), Keys.ARROW_RIGHT).perform()
+                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                       print(e)
+               elif "rewind" in self.data:
+                   print('rewind received')
+                   try:
+                       ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_tag_name('body'), Keys.ARROW_LEFT).perform()
+                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                       print(e)
                elif not self.data:
                    print('No data received')
                self.conn.sendall(b'Hi from server')

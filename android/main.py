@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.4'
+__version__ = '0.5'
 
 import threading
 
@@ -18,11 +18,14 @@ from client import DalyinskiClient
 class MainApp(App):
     def build(self):
         main_layout = BoxLayout(orientation='vertical',
-                                spacing=2)
+                                spacing=2,
+                                padding=5)
         cpt_tab_home_lyt = BoxLayout(orientation='horizontal',
                                         spacing=2)
         playback_btns_lyt = BoxLayout(orientation='horizontal',
-                                        spacing=2)
+                                        spacing=1)
+        ff_rewind_btns_lyt = BoxLayout(orientation='horizontal',
+                                        spacing=1)
 
 
         # This will only draw a rectangle at the layout’s initial position and size.
@@ -52,7 +55,7 @@ class MainApp(App):
         btn_watch_later.bind(on_press=self.on_press_watch_later)
 
         btn_play_previous = Button(text='Play Previous', 
-                size_hint=(0.4, 0.8),
+                size_hint=(0.4, 0.95),
                 pos_hint={'center_x': .5, 'center_y': .5})
         btn_play_previous.bind(on_press=self.on_press_play_previous)
 
@@ -62,7 +65,7 @@ class MainApp(App):
         btn_play_pause.bind(on_press=self.on_press_play_pause)
         
         btn_play_next = Button(text='Play Next',
-                size_hint=(0.4, 0.8),
+                size_hint=(0.4, 0.95),
                 pos_hint={'center_x': .5, 'center_y': .5})
         btn_play_next.bind(on_press=self.on_press_play_next)
         
@@ -86,9 +89,22 @@ class MainApp(App):
                 pos_hint={'center_x': .5, 'center_y': .5})
         btn_switch_tab.bind(on_press=self.on_press_switch_tab)
 
+        btn_rewind = Button(text='Rewind', 
+                size_hint=(0.4, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
+        btn_rewind.bind(on_press=self.on_press_rewind)
+
+        btn_fforward = Button(text='Fast forward', 
+                size_hint=(0.4, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
+        btn_fforward.bind(on_press=self.on_press_fforward)
+
         playback_btns_lyt.add_widget(btn_play_previous)
         playback_btns_lyt.add_widget(btn_play_pause)
         playback_btns_lyt.add_widget(btn_play_next)
+
+        ff_rewind_btns_lyt.add_widget(btn_rewind)
+        ff_rewind_btns_lyt.add_widget(btn_fforward)
 
         cpt_tab_home_lyt.add_widget(btn_captions)
         cpt_tab_home_lyt.add_widget(btn_go_home)
@@ -101,12 +117,13 @@ class MainApp(App):
 
         # playback buttons
         main_layout.add_widget(playback_btns_lyt)
+        main_layout.add_widget(ff_rewind_btns_lyt)
+
         main_layout.add_widget(btn_fullscreen)
 
         
         return main_layout
 
-    
     def _update_rect(self, instance, value):
         ''' Update rectangle position for drawing background '''
         self.rect.pos = instance.pos
@@ -120,6 +137,8 @@ class MainApp(App):
             auto_dismiss=False)
         return self.popup
 
+    # TODO: maybe use a singleton instead of instantiating new class in every call
+    # https://stackoverflow.com/questions/31875/is-there-a-simple-elegant-way-to-define-singletons
     def _on_press_send_ping(self, instance):
         ''' Private function to call with threading, to prevent gui blocking '''
         p = self.show_popup('Discovering server.\nPlease wait...')
@@ -175,6 +194,14 @@ class MainApp(App):
     def on_press_switch_tab(self, instance):
         c = DalyinskiClient()
         c.command(b'switchtab')
+
+    def on_press_fforward(self, instance):
+        c = DalyinskiClient()
+        c.command(b'fforward')
+
+    def on_press_rewind(self, instance):
+        c = DalyinskiClient()
+        c.command(b'rewind')
 
 if __name__ == '__main__':
     app = MainApp()
