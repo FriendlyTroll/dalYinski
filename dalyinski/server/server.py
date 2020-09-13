@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.5'
+__version__ = '0.6'
 
 import socket
 import time
@@ -17,10 +17,12 @@ from dalyinski.server.browser import FFBrowser
 
 class ServerConn:
     def __init__(self):
+        print(f'Server version: {__version__}')
         self.HOST = self.get_ip_address()
         self.PORT = 65432
         self.MAGIC = 'dalyinskimagicpkt'
         self.li = 0 # index used for change_tab()
+        self.last_thumbnail_was = '' # keep track of the last thumbnail command; see below
     
     def browser_profile(self):
         ''' Find the selenium profile directory '''
@@ -80,15 +82,11 @@ class ServerConn:
                self.conn, self.addr = self.s.accept()
                print('Connected by', self.addr)
                self.data = self.conn.recv(1024).decode("utf-8")
-               if "ping" in self.data:
-                    print('ping received')
-               elif "fbro" in self.data:
+               if "fbro" in self.data:
                     print('fbro received')
                     # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
-                    # self.fp = webdriver.FirefoxProfile("/home/antisa/.mozilla/firefox/ne44ra9s.selenium")
                     self.fp = webdriver.FirefoxProfile(self.browser_profile())
                     self.bro = webdriver.Firefox(self.fp)
-                    # TODO: add disable lazy loading of tabs for correct tab switching - set_preference()?
                     # Install ublock origin if it exists
                     try:
                         self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
@@ -99,21 +97,43 @@ class ServerConn:
                         print("No uBlock Origin extension found")
                     # bro.fullscreen_window()
                     self.bro.get("https://www.youtube.com/")
+               elif "selectthumb" in self.data:
+                    try:
+                        # Try clicking on selected video on Home page. Keep track of what was the last command received for
+                        # the thumbnail so that we can click on the correct one. We need index - 1 because it is immediately
+                        # incremented in the nextthumb handler below, after drawing the border
+                        print("Javascript PLAYPAUSE")
+                        if self.last_thumbnail_was == 'prevthumb':
+                            self.bro.execute_script('''
+var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
+thumbnailList[window.current_idx].click();
+                        ''')
+                        else:
+                            self.bro.execute_script('''
+var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
+thumbnailList[window.current_idx - 1].click();
+                        ''')
+                    except exceptions.JavascriptException as e:
+                       print("Javascript Exception >>", e)
                elif "playpause" in self.data:
                     print('play/pause received')
                     try:
-                        self.bro.find_element_by_class_name("ytp-play-button").click()
-                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
-                        try:
-                            # find "Play all" thumbnail then in "Watch later" playlist
-                            self.bro.find_element_by_xpath("//img[@id='img'][@width='357']").click()
-                        # no element at all
-                        except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
-                            print(e)
-                    try:
-                        self.bro.find_element_by_xpath("//yt-button-renderer[@id='confirm-button']").click() # that annoying "Still watching?" popup
+                        # find "Play all" thumbnail then in "Watch later" playlist
+                        self.bro.find_element_by_xpath("//img[@id='img'][@width='357']").click()
+                        print("WATCH LATER play")
+                    # no element at all
                     except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
                         print(e)
+                    try:
+                        self.bro.find_element_by_xpath("//yt-formatted-string[@id='text']").click() # that annoying "Still watching?" popup
+                        print("STILL WATCHING play")
+                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                        print(e)
+                        try:
+                            ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_tag_name('body'), 'k').perform()
+                            print("k BUTTON play")
+                        except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException,exceptions.TimeoutException) as e:
+                            print("k BUTTON exception: ", e)
                elif "watchlater" in self.data:
                    print('watchlater received')
                    # Handle cases when finding elements doesn't work if the window is made smaller than half of screen beacuse only icons for navigation are then shown or just the hamburger icon is shown
@@ -128,13 +148,13 @@ class ServerConn:
                elif "playnext" in self.data:
                    print('playnext received')
                    try:
-                       self.bro.find_element_by_class_name("ytp-next-button.ytp-button").click()
+                       ActionChains(self.bro).key_down(Keys.LEFT_SHIFT).send_keys('n').key_up(Keys.LEFT_SHIFT).perform()
                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
                        print(e)
                elif "playprevious" in self.data:
                    print('playprevious received')
                    try:
-                       self.bro.find_element_by_class_name("ytp-prev-button.ytp-button").click()
+                       ActionChains(self.bro).key_down(Keys.LEFT_SHIFT).send_keys('p').key_up(Keys.LEFT_SHIFT).perform()
                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
                        print(e)
                elif "fullscreen" in self.data:
@@ -176,6 +196,72 @@ class ServerConn:
                        ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_tag_name('body'), Keys.ARROW_LEFT).perform()
                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
                        print(e)
+               elif "nextthumb" in self.data:
+                   print('nextthumb received')
+                   try:
+                       if self.last_thumbnail_was == 'prevthumb':
+                           self.bro.execute_script('''
+/* 
+Defining a variable current_idx as "var current_idx = 0" limits the scope to the
+execution of the script. Selenium wraps the execution of javascript snippets into
+their own script so variables don't survive the end of the script (if..else always
+sees current_idx = 0). window.current_idx puts the variable into global scope
+*/
+if (typeof window.current_idx === 'undefined') {
+	window.current_idx = 0;  
+  
+}
+
+var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
+if (current_idx == 0) {
+    thumbnailList[window.current_idx].style.setProperty('border', '8px inset red'); // set border on current thumbnail
+    window.current_idx +=1;
+} else {
+    window.current_idx +=1; // since last command was prevthumb we need to increment the index first for drawing the border
+    thumbnailList[window.current_idx - 1].style.removeProperty('border'); // remove border from previous thumbnail
+    thumbnailList[window.current_idx].style.setProperty('border', '8px inset red'); // set border on current thumbnail
+    window.current_idx +=1; // increment index again to get next thumbnail
+} ''')
+                           self.last_thumbnail_was = 'nextthumb'
+                       else:
+                           self.bro.execute_script('''
+if (typeof window.current_idx === 'undefined') {
+	window.current_idx = 0;  
+  
+}
+
+var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
+if (current_idx == 0) {
+    thumbnailList[window.current_idx].style.setProperty('border', '8px inset red'); // set border on current thumbnail
+    window.current_idx +=1;
+} else {
+    thumbnailList[window.current_idx - 1].style.removeProperty('border'); // remove border from previous thumbnail
+    thumbnailList[window.current_idx].style.setProperty('border', '8px inset red'); // set border on current thumbnail
+    window.current_idx +=1;
+} ''')
+                           self.last_thumbnail_was = 'nextthumb'
+                   except exceptions.JavascriptException as e:
+                       print(e)
+               elif "prevthumb" in self.data:
+                  print('prevthumb received') 
+                  try:
+                      if self.last_thumbnail_was == 'nextthumb':
+                          self.bro.execute_script('''
+var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
+window.current_idx -=1;
+thumbnailList[window.current_idx].style.removeProperty('border'); // remove border from current thumbnail
+thumbnailList[window.current_idx - 1].style.setProperty('border', '8px inset red'); // draw border on previous thumbnail
+window.current_idx -=1; ''')
+                          self.last_thumbnail_was = 'prevthumb'
+                      else:
+                          self.bro.execute_script('''
+var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
+thumbnailList[window.current_idx].style.removeProperty('border'); // remove border from current thumbnail
+thumbnailList[window.current_idx - 1].style.setProperty('border', '8px inset red'); // draw border on previous thumbnail
+window.current_idx -=1; ''')
+                          self.last_thumbnail_was = 'prevthumb'
+                  except exceptions.JavascriptException as e:
+                      print(e)
                elif not self.data:
                    print('No data received')
                self.conn.sendall(b'Hi from server')
@@ -183,7 +269,6 @@ class ServerConn:
             # catch scenario where bro variable is not defined because user maybe clicked some other button before opening the webbrowser
            except UnboundLocalError as e:
                print(e)
-
            # TODO: clean up the socket on exit and/or Ctrl+C
         self.s.close()
 

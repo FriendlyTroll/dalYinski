@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.5'
+__version__ = '0.6'
 
 import threading
 
@@ -26,7 +26,8 @@ class MainApp(App):
                                         spacing=1)
         ff_rewind_btns_lyt = BoxLayout(orientation='horizontal',
                                         spacing=1)
-
+        thumb_btns_lyt = BoxLayout(orientation='horizontal',
+                                        spacing=1)
 
         # This will only draw a rectangle at the layout’s initial position and size.
         # To make sure the rect is drawn inside the layout, when the layout size/pos changes, we need to listen to any changes and update the rectangles size and pos.
@@ -38,11 +39,20 @@ class MainApp(App):
 
 
 
-        btn_ping = Button(text='Connect to server',
+        btn_next_thumb = Button(text='Next thumbnail vid',
                 size_hint=(0.9, 0.8),
                 pos_hint={'center_x': .5, 'center_y': .5})
-        btn_ping.bind(on_press=self.on_press_send_ping)
-        
+        btn_next_thumb.bind(on_press=self.on_press_next_thumb)
+
+        btn_prev_thumb = Button(text='Previous thumbnail vid',
+                size_hint=(0.9, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
+        btn_prev_thumb.bind(on_press=self.on_press_prev_thumb)
+
+        btn_select_thumb = Button(text='Select video',
+                size_hint=(0.9, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
+        btn_select_thumb.bind(on_press=self.on_press_select_thumb)
 
         btn_open_browser = Button(text='Open Firefox',
                 size_hint=(0.9, 0.8),
@@ -109,10 +119,14 @@ class MainApp(App):
         cpt_tab_home_lyt.add_widget(btn_captions)
         cpt_tab_home_lyt.add_widget(btn_go_home)
         cpt_tab_home_lyt.add_widget(btn_switch_tab)
+
+        thumb_btns_lyt.add_widget(btn_next_thumb)
+        thumb_btns_lyt.add_widget(btn_select_thumb)
+        thumb_btns_lyt.add_widget(btn_prev_thumb)
         
-        main_layout.add_widget(btn_ping)
         main_layout.add_widget(btn_open_browser)
         main_layout.add_widget(btn_watch_later)
+        main_layout.add_widget(thumb_btns_lyt)
         main_layout.add_widget(cpt_tab_home_lyt)
 
         # playback buttons
@@ -139,27 +153,16 @@ class MainApp(App):
 
     # TODO: maybe use a singleton instead of instantiating new class in every call
     # https://stackoverflow.com/questions/31875/is-there-a-simple-elegant-way-to-define-singletons
-    def _on_press_send_ping(self, instance):
-        ''' Private function to call with threading, to prevent gui blocking '''
-        p = self.show_popup('Discovering server.\nPlease wait...')
-        p.open() # Open the popup
-        c = DalyinskiClient()
-        c.command(b'ping')
-        p.dismiss() # Close popup after we send the inital ping packet
-
-    def on_press_send_ping(self, instance):
-        ''' Threading function to call the "real" function '''
-        t = threading.Thread(target=self._on_press_send_ping, args=(instance,))
-        t.start()
-
     def _on_press_open_browser(self, instance):
-        p = self.show_popup('Opening web browser...')
+        ''' Private function to call with threading, to prevent gui blocking '''
+        p = self.show_popup('Connecting to server\nand opening web browser...\nPlease wait.')
         p.open()
         c = DalyinskiClient()
         c.command(b'fbro')
         p.dismiss()
 
     def on_press_open_browser(self, instance):
+        ''' Threading function to call the "real" function '''
         t = threading.Thread(target=self._on_press_open_browser, args=(instance,))
         t.start()
 
@@ -202,6 +205,18 @@ class MainApp(App):
     def on_press_rewind(self, instance):
         c = DalyinskiClient()
         c.command(b'rewind')
+
+    def on_press_next_thumb(self, instance):
+        c = DalyinskiClient()
+        c.command(b'nextthumb')
+
+    def on_press_prev_thumb(self, instance):
+        c = DalyinskiClient()
+        c.command(b'prevthumb')
+
+    def on_press_select_thumb(self, instance):
+        c = DalyinskiClient()
+        c.command(b'selectthumb')
 
 if __name__ == '__main__':
     app = MainApp()
