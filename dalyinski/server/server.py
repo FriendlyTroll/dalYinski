@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.6'
+__version__ = '0.7'
 
 import socket
 import time
@@ -11,6 +11,7 @@ from selenium import webdriver
 from selenium.common import exceptions
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
+from gi.repository import Gtk, Notify
 
 # local imports
 from dalyinski.server.browser import FFBrowser
@@ -84,6 +85,9 @@ class ServerConn:
                self.data = self.conn.recv(1024).decode("utf-8")
                if "fbro" in self.data:
                     print('fbro received')
+                    Notify.init('dalYinski server')
+                    noticon = Notify.Notification.new('dalYinski server', 'Opening web browser', '/usr/share/pixmaps/dalyinski-server.png')
+                    noticon.show()
                     # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
                     self.fp = webdriver.FirefoxProfile(self.browser_profile())
                     self.bro = webdriver.Firefox(self.fp)
@@ -262,6 +266,24 @@ window.current_idx -=1; ''')
                           self.last_thumbnail_was = 'prevthumb'
                   except exceptions.JavascriptException as e:
                       print(e)
+               elif "scrolldown" in self.data:
+                   print('scrolldown received')
+                   try:
+                       self.bro.execute_script('''
+                       window.scrollBy({
+                         top: 350,
+                           behavior: 'smooth'}); ''')
+                   except exceptions.JavascriptException as e:
+                       print(e)
+               elif "scrollup" in self.data:
+                   print('scrolldown received')
+                   try:
+                       self.bro.execute_script('''
+                       window.scrollBy({
+                         top: -350,
+                         behavior: 'smooth'}); ''')
+                   except exceptions.JavascriptException as e:
+                       print(e)
                elif not self.data:
                    print('No data received')
                self.conn.sendall(b'Hi from server')

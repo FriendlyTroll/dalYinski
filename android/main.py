@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.6'
+__version__ = '0.7'
 
 import threading
 
@@ -48,6 +48,16 @@ class MainApp(App):
                 size_hint=(0.9, 0.8),
                 pos_hint={'center_x': .5, 'center_y': .5})
         btn_prev_thumb.bind(on_press=self.on_press_prev_thumb)
+
+        btn_scroll_down = Button(text='Scroll down',
+                size_hint=(0.9, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
+        btn_scroll_down.bind(on_press=self.on_press_scroll_down)
+
+        btn_scroll_up = Button(text='Scroll up',
+                size_hint=(0.9, 0.8),
+                pos_hint={'center_x': .5, 'center_y': .5})
+        btn_scroll_up.bind(on_press=self.on_press_scroll_up)
 
         btn_select_thumb = Button(text='Select video',
                 size_hint=(0.9, 0.8),
@@ -123,6 +133,8 @@ class MainApp(App):
         thumb_btns_lyt.add_widget(btn_next_thumb)
         thumb_btns_lyt.add_widget(btn_select_thumb)
         thumb_btns_lyt.add_widget(btn_prev_thumb)
+        thumb_btns_lyt.add_widget(btn_scroll_down)
+        thumb_btns_lyt.add_widget(btn_scroll_up)
         
         main_layout.add_widget(btn_open_browser)
         main_layout.add_widget(btn_watch_later)
@@ -217,6 +229,14 @@ class MainApp(App):
     def on_press_select_thumb(self, instance):
         c = DalyinskiClient()
         c.command(b'selectthumb')
+
+    def on_press_scroll_down(self, instance):
+        c = DalyinskiClient()
+        c.command(b'scrolldown')
+
+    def on_press_scroll_up(self, instance):
+        c = DalyinskiClient()
+        c.command(b'scrollup')
 
 if __name__ == '__main__':
     app = MainApp()
