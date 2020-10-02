@@ -134,9 +134,10 @@ thumbnailList[window.current_idx - 1].click();
                     except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
                         print(e)
                         try:
+                        # TODO: k BUTTON exception:  Message: (539, -175) is out of bounds of viewport width (1090) and height (807)
                             ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_tag_name('body'), 'k').perform()
                             print("k BUTTON play")
-                        except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException,exceptions.TimeoutException) as e:
+                        except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException,exceptions.TimeoutException, exceptions.MoveTargetOutOfBoundsException) as e:
                             print("k BUTTON exception: ", e)
                elif "watchlater" in self.data:
                    print('watchlater received')
