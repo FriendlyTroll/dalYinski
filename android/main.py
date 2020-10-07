@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.8'
+__version__ = '0.7'
 
 import threading
 
@@ -14,10 +14,12 @@ from kivy.graphics import Rectangle
 from kivy.uix.image import Image, AsyncImage
 from kivy.uix.widget import Widget
 from kivy.uix.behaviors import ButtonBehavior
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.scrollview import ScrollView 
+from kivy.core.window import Window
 
 # local imports
 from client import DalyinskiClient
@@ -33,6 +35,24 @@ Builder.load_string("""
         id: yt_th_scr
     PlaybackScreen:
         id: play_scr
+
+<StartScreen>:
+    name: 'start_screen'
+    container: container
+    id: container
+    BoxLayout:
+        orientation: 'vertical'
+        Button:
+            text: 'Youtube Home'
+            background_color: (1, 0, 0, 1)
+            on_press: 
+                root.manager.current = 'youtube_thumb_scr' 
+                root.manager.transition.direction = 'left'
+        Button:
+            text: 'Playback'
+            on_press: 
+                root.manager.current = 'playback_screen' 
+                root.manager.transition.direction = 'left'
 
 <PlaybackScreen>:
     name: 'playback_screen'
@@ -59,8 +79,8 @@ Builder.load_string("""
             Button:
                 id: btn_open_browser
                 text: 'Connect to server and open browser'
-                text_size: (100, None)
-                on_press: root.on_press_open_browser()
+                text_size: (150, None)
+                on_release: root.on_press_open_browser()
         BoxLayout:
             id: second_row_lyt
             orientation: 'horizontal'
@@ -108,7 +128,7 @@ Builder.load_string("""
             ImageButton:
                 id: btn_switch_tab
                 source: './img/baseline_tab_black_48.png' if self.state == 'normal' else './img/baseline_tab_unselected_black_48.png'
-                on_press: root.on_press_switch_tab()
+                on_release: root.on_press_switch_tab()
         BoxLayout:
             id: playback_btns_lyt
             orientation: 'horizontal'
@@ -150,90 +170,98 @@ Builder.load_string("""
             
     
 
-<StartScreen>:
-    name: 'start_screen'
-    container: container
-    id: container
-    BoxLayout:
-        orientation: 'vertical'
-        Button:
-            text: 'Youtube Home'
-            background_color: (1, 0, 0, 1)
-            on_press: 
-                root.manager.current = 'show_imgs' 
-                root.manager.transition.direction = 'left'
-        Button:
-            text: 'Playback'
-            on_press: 
-                root.manager.current = 'playback_screen' 
-                root.manager.transition.direction = 'left'
-
 <YoutubeThumbScreen>:
-    name: 'show_imgs'
-    prop_show_imgs: prop_show_imgs
-    on_pre_enter: root.add_lacuna()
+    name: 'youtube_thumb_scr'
+    on_pre_enter: root.add_scroll_view()
+    on_pre_leave: root.clear_scroll_view()
 
+<ScrollableView>:
+    size_hint: 1, None
+
+    scroll_view_gl: scroll_view_gl
     GridLayout:
-        id: prop_show_imgs
+        id: scroll_view_gl
         cols: 3
-        Button:
-            text: 'Start screen'
-            on_press:
-                root.manager.current = 'start_screen' 
-                root.manager.transition.direction = 'right'
-            
-        Button:
-            text: 'Add image'
-            on_press: root.add_lacuna()
-            size_hint: 1, 0.1
-    
+        spacing: 2
+        size_hint_y: None
 
-<ThumbLayout>:
-    prop_thumb_lyt_ai: prop_thumb_lyt_ai
-    prop_thumb_lyt_label: prop_thumb_lyt_label
-    BoxLayout:
-        orientation: 'vertical'
-        AsyncImage:
-            id: prop_thumb_lyt_ai
-            center: self.parent.center
-            size: self.parent.width, self.parent.height
-        Label:
-            id: prop_thumb_lyt_label
-            size_hint: 1, 0.1
-        Button:
-            on_press: 
-                app.root.current = 'start_screen'
-            text: 'Play video'
-            size_hint: 1, 0.3
+# These 3 widgets are dynamically added to ScrollableView above
+<YTimg>:
+
+<YTlbl>:
+    size_hint_y: None
+    # height: self.texture_size[1]
+    text_size: 200, None
+
+<YTPlay>:
+    size_hint_y: None
+    text: "Play"
+    on_press: 
+        app.root.current = 'start_screen'
+        app.root.transition.direction = 'right'
+
 
 
 """)
 
-video_thumb_urls = [
-    'https://i.ytimg.com/vi/Bzty7HDJu4Y/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLBLaPX7QFRoumLRHQdQzqOqimQSzw',
-    'https://i.ytimg.com/vi/USXHxgWoS9g/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLBpSXXRzSrsOLox5p2ejDfUDWSeBg',
-    'https://i.ytimg.com/vi/59Ny29nNh2A/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLBZc-L22bp2mCDkUShxTSQ7J_p7qw',
-    'https://i.ytimg.com/vi/paQsE53YkVU/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLBvevKpyxxh6BJ_SoGTcQJByd4a5g',
-    'https://i.ytimg.com/vi/36X4hwsvjJE/hq720.jpg?sqp=-oaymwEZCNAFEJQDSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLCE8VcrwjmpSfBZaZZ8ZgZBLKVbZw',
-    'https://i.ytimg.com/vi/v7NUi88Lxi8/hq720.jpg?sqp=-oaymwEZCNAFEJQDSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLC4bbrj3ISvkpMht9zQgesiF7sw9g',
-    'https://i.ytimg.com/vi/paQsE53YkVU/hqdefault.jpg?sqp=-oaymwEXCOADEI4CSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLBvevKpyxxh6BJ_SoGTcQJByd4a5g',
-    'https://i.ytimg.com/vi/36X4hwsvjJE/hq720.jpg?sqp=-oaymwEZCNAFEJQDSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLCE8VcrwjmpSfBZaZZ8ZgZBLKVbZw',
-    'https://i.ytimg.com/vi/v7NUi88Lxi8/hq720.jpg?sqp=-oaymwEZCNAFEJQDSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLC4bbrj3ISvkpMht9zQgesiF7sw9g'
-        ]
+class YTimg(AsyncImage):
+    def __init__(self, imgsrc, **kwargs):
+        super().__init__(**kwargs)
+        self.source = imgsrc
+        
+class YTlbl(Label):
+    def __init__(self, labeltext, **kwargs):
+        super().__init__(**kwargs)
+        self.text = labeltext
 
+class YTPlay(Button):
+    pass
+
+class YoutubeThumbScreen(Screen):
+    def add_scroll_view(self):
+        self.add_widget(ScrollableView())
+
+    def clear_scroll_view(self):
+        self.clear_widgets()
+
+class ScrollableView(ScrollView):
+    scroll_view_gl = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size = (Window.width, Window.height)
+        self.scroll_view_gl.bind(minimum_height=self.scroll_view_gl.setter('height'))
+        self.get_thumbnails()
+
+    def get_thumbnails(self):
+        ''' We can't do any UI updates from a separate thread.
+        That's why we are calling a separate function (video_urls()) from
+        the threaded function (_get_thumbnails()) and we are scheduling
+        it on the main thread via @mainthread decorator from kivy.clock 
+        module '''
+        gt = threading.Thread(target=self._get_thumbnails, daemon=True)
+        gt.start()
+
+    def _get_thumbnails(self):
+        c = DalyinskiClient()
+        video_thumb_urls = c.recv_thumb_list(b'getthumbnails')
+        self.video_urls(video_thumb_urls)
+
+    @mainthread
+    def video_urls(self, video_thumb_urls):
+        # only go through first 12 videos, to neatly fit inside 3x4 gridlayout
+        for thumb in video_thumb_urls[:12]:
+            print("DESCRIPTION: ", thumb[0])
+            print("IMAGE LINK: ", thumb[1])
+            self.scroll_view_gl.add_widget(YTimg(thumb[1]))
+            self.scroll_view_gl.add_widget(YTlbl(thumb[0]))
+            self.scroll_view_gl.add_widget(YTPlay())
+
+            
 
 #########################
 # Custom button classes #
 #########################
-class ThumbLayout(BoxLayout):
-    prop_thumb_lyt_ai = ObjectProperty()
-    prop_thumb_lyt_label = ObjectProperty()
-
-    def __init__(self, imgsrc, labeltext, **kwargs):
-        super().__init__(**kwargs)
-        self.prop_thumb_lyt_ai.source = imgsrc
-        self.prop_thumb_lyt_label.text = labeltext
-            
 
 class ImageButton(ButtonBehavior, Image):
     def __init__(self, **kwargs):
@@ -267,19 +295,6 @@ class PlayPauseButton(ButtonBehavior, Image):
 ###########
 # Screens #
 ###########
-class YoutubeThumbScreen(Screen):
-    grid_si_prop = ObjectProperty()
-
-    def add_lacuna(self):
-        for thumb in video_thumb_urls:
-            self.prop_show_imgs.add_widget(ThumbLayout(thumb, 'heioha'))
-
-    def get_thumbnails(self):
-        c = DalyinskiClient()
-        c.command(b'getthumbnails')
-        for thumb in video_thumb_urls:
-            self.prop_show_imgs.add_widget(ThumbLayout(thumb, 'heioha'))
-
 class StartScreen(Screen):
     pass
 

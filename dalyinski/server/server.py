@@ -6,6 +6,8 @@ import socket
 import time
 import threading
 import os
+import pickle
+import struct
 
 from selenium import webdriver
 from selenium.common import exceptions
@@ -73,6 +75,7 @@ class ServerConn:
     ### Main workhorse ###
     def server_conn(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.bind((self.HOST, self.PORT))
         self.s.listen()
         
@@ -285,6 +288,31 @@ window.current_idx -=1; ''')
                          behavior: 'smooth'}); ''')
                    except exceptions.JavascriptException as e:
                        print(e)
+               elif "getthumbnails" in self.data:
+                   try:
+                       elem_img = self.bro.find_elements_by_xpath('//img[@id="img"]')
+                       elem_txt = self.bro.find_elements_by_xpath('//yt-formatted-string[@id="video-title"]')
+                       thumbs2send = []
+                       for el in elem_img:
+                           try:
+                               if el.get_attribute("src").startswith("https://i.ytimg.com/vi"):
+                                  thumbs2send.append(el.get_attribute("src"))
+                           except Exception as e:
+                               print("thumbs2send EXCEPTION: ", e)
+
+                       text2send = []
+                       for txt in elem_txt:
+                           try:
+                               text2send.append(txt.text)
+                           except Exception as e:
+                               print("text2send EXCEPTION: ", e)
+                       thumbnail_info = zip(text2send, thumbs2send)
+                       thumbnail_info_l = list(thumbnail_info)
+                       self.conn.sendall(pickle.dumps(thumbnail_info_l))
+                       print("DATA SENT!!!...")
+                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                       print(e)
+                       self.conn.sendall("!! errored out!")
                elif not self.data:
                    print('No data received')
                self.conn.sendall(b'Hi from server')
