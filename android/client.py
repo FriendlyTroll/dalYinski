@@ -41,7 +41,7 @@ class DalyinskiClient:
         packets = bytearray()
         # while True:
             # print("<<< receiving")
-        packet = self.s.recv(16000)
+        packet = self.s.recv(32000)
             # if not packet: 
             #     print("BREAKING out of while")
             #     break

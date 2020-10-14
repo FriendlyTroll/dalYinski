@@ -31,13 +31,16 @@ last_cmd = ''
 Builder.load_string("""
 <DalyinskiScrMgr>:
     StartScreen:
+        id: start_scr
+        name: 'start_screen'
     YoutubeThumbScreen:
         id: yt_th_scr
+        name: 'youtube_thumb_scr'
     PlaybackScreen:
         id: play_scr
+        name: 'playback_screen'
 
 <StartScreen>:
-    name: 'start_screen'
     container: container
     id: container
     BoxLayout:
@@ -55,7 +58,6 @@ Builder.load_string("""
                 root.manager.transition.direction = 'left'
 
 <PlaybackScreen>:
-    name: 'playback_screen'
 
     btn_play_pause: btn_play_pause
 
@@ -171,14 +173,17 @@ Builder.load_string("""
     
 
 <YoutubeThumbScreen>:
-    name: 'youtube_thumb_scr'
-    on_pre_enter: root.add_scroll_view()
+    on_pre_enter: 
+        root.add_scroll_view()
+
     on_pre_leave: root.clear_scroll_view()
 
 <ScrollableView>:
-    size_hint: 1, None
-
     scroll_view_gl: scroll_view_gl
+
+    size_hint: 1, None
+    on_scroll_stop: root.update_content()
+
     GridLayout:
         id: scroll_view_gl
         cols: 3
@@ -190,32 +195,54 @@ Builder.load_string("""
 
 <YTlbl>:
     size_hint_y: None
-    # height: self.texture_size[1]
     text_size: 200, None
 
 <YTPlay>:
     size_hint_y: None
     text: "Play"
-    on_press: 
-        app.root.current = 'start_screen'
+    on_release: 
+        root.play_video()
+        app.root.current = 'playback_screen'
         app.root.transition.direction = 'right'
 
 
 
 """)
 
+def show_popup(message='Info'):
+    popup = Popup(title='Info',
+    content=Label(text=message),
+    size_hint=(0.8, 0.8), size=(600, 400),
+    auto_dismiss=False)
+    return popup
+
 class YTimg(AsyncImage):
     def __init__(self, imgsrc, **kwargs):
         super().__init__(**kwargs)
         self.source = imgsrc
         
+
 class YTlbl(Label):
     def __init__(self, labeltext, **kwargs):
         super().__init__(**kwargs)
         self.text = labeltext
 
+
 class YTPlay(Button):
-    pass
+    def __init__(self, vidurl, **kwargs):
+        super().__init__(**kwargs)
+        self.vidurl = vidurl
+
+    def play_video(self):
+        t = threading.Thread(target=self._play_video, daemon=True)
+        t.start()
+
+    def _play_video(self):
+        ''' Send playvideo command + image url from the video_thumb_urls list
+        which gets passed in the constructor above as imgurl variable
+        so that the server can click on it and start video. '''
+        c = DalyinskiClient()
+        c.command(b'playvideo' + b' ' + bytes(self.vidurl, 'utf-8'))
 
 class YoutubeThumbScreen(Screen):
     def add_scroll_view(self):
@@ -224,39 +251,77 @@ class YoutubeThumbScreen(Screen):
     def clear_scroll_view(self):
         self.clear_widgets()
 
+video_thumb_urls = [] # this is a list of tuples
 class ScrollableView(ScrollView):
     scroll_view_gl = ObjectProperty()
+
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.size = (Window.width, Window.height)
         self.scroll_view_gl.bind(minimum_height=self.scroll_view_gl.setter('height'))
         self.get_thumbnails()
+        self.chunk_index = 0 # keep track on which chunk in the list we are
+        self.video_thumb_chunk = []
 
-    def get_thumbnails(self):
+    def get_thumbnails(self, chunk_idx=0):
         ''' We can't do any UI updates from a separate thread.
         That's why we are calling a separate function (video_urls()) from
-        the threaded function (_get_thumbnails()) and we are scheduling
+        the threaded function (_get_thumbnails()) and scheduling
         it on the main thread via @mainthread decorator from kivy.clock 
         module '''
-        gt = threading.Thread(target=self._get_thumbnails, daemon=True)
-        gt.start()
+        t = threading.Thread(target=self._get_thumbnails, args=(chunk_idx,), daemon=True)
+        t.start()
 
-    def _get_thumbnails(self):
+    def _get_thumbnails(self, chunk_idx=0):
+        p = show_popup("Fetching videos... \nPlease wait.")
+        p.open()
         c = DalyinskiClient()
+        global video_thumb_urls
         video_thumb_urls = c.recv_thumb_list(b'getthumbnails')
-        self.video_urls(video_thumb_urls)
+        self.video_thumb_chunk = list(self.divide_chunks(video_thumb_urls, 7)) # a list of lists of videos
+        self.video_urls(self.video_thumb_chunk, chunk_idx=0)
+        p.dismiss()
+        # print("video thumb chunks >> ", video_thumb_chunk)
 
     @mainthread
-    def video_urls(self, video_thumb_urls):
-        # only go through first 12 videos, to neatly fit inside 3x4 gridlayout
-        for thumb in video_thumb_urls[:12]:
-            print("DESCRIPTION: ", thumb[0])
-            print("IMAGE LINK: ", thumb[1])
-            self.scroll_view_gl.add_widget(YTimg(thumb[1]))
-            self.scroll_view_gl.add_widget(YTlbl(thumb[0]))
-            self.scroll_view_gl.add_widget(YTPlay())
+    def video_urls(self, video_thumb_chunk, chunk_idx=0):
+        try:
+            vid_sublist = video_thumb_chunk[chunk_idx]
+            print("Chunk index: ", self.chunk_index, " of list length ", len(video_thumb_chunk))
+            for thumb in vid_sublist:
+                # print("DESCRIPTION: ", thumb[0])
+                # print("IMAGE LINK: ", thumb[1])
+                # print("VIDEO LINK: ", thumb[2])
+                self.scroll_view_gl.add_widget(YTimg(thumb[1]))
+                self.scroll_view_gl.add_widget(YTlbl(thumb[0]))
+                self.scroll_view_gl.add_widget(YTPlay(thumb[2])) # send video url to constructor
+            self.chunk_index += 1
+        except IndexError as e:
+            print(e)
+            # print("Trying to fetch new list...")
+            # self.get_thumbnails(chunk_idx=self.chunk_index)
 
+    def update_content(self):
+        # print("Scroll value Y: ", round(self.scroll_y, 2))
+        if round(self.scroll_y, 2) < 0:
+            # c = DalyinskiClient()
+            # c.command(b'scrolldown')
+            print("*** uPDATE CONTENT ***")
+            print("Chunk idx after ", self.chunk_index)
+            self.video_urls(self.video_thumb_chunk, self.chunk_index)
+            # self.chunk_index += 1
+            # sleep(2)
+
+    def divide_chunks(self, l, n): 
+        '''
+        Yield successive n-sized 
+        chunks from list l. '''
+          
+        # looping till length l 
+        for i in range(0, len(l), n):  
+            yield l[i:i + n] 
+    
             
 
 #########################
@@ -289,12 +354,8 @@ class PlayPauseButton(ButtonBehavior, Image):
             self.source = './img/baseline_pause_circle_filled_black_48.png'
             isPaused = False
         last_cmd = 'playpause'
-        # print('PlayPause ==>',isPaused)
 
 
-###########
-# Screens #
-###########
 class StartScreen(Screen):
     pass
 
@@ -305,18 +366,12 @@ class PlaybackScreen(Screen):
     ############################
     # PlaybackScreen Callbacks #
     ############################
-    def show_popup(self, message='Info'):
-        self.popup = Popup(title='Info',
-            content=Label(text=message),
-            size_hint=(0.8, 0.8), size=(600, 400),
-            auto_dismiss=False)
-        return self.popup
 
     # TODO: maybe use a singleton instead of instantiating new class in every call
     # https://stackoverflow.com/questions/31875/is-there-a-simple-elegant-way-to-define-singletons
     def _on_press_open_browser(self):
         ''' Private function to call with threading, to prevent gui blocking '''
-        p = self.show_popup('Connecting to server\nand opening web browser...\nPlease wait.')
+        p = show_popup('Connecting to server\nand opening web browser...\nPlease wait.')
         p.open()
         c = DalyinskiClient()
         c.command(b'fbro')

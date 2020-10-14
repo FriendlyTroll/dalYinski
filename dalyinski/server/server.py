@@ -54,7 +54,7 @@ class ServerConn:
            data = self.MAGIC+self.HOST
            sudp.sendto(data.encode(), ('<broadcast>', self.PORT))
            print('Sent service announcement')
-           time.sleep(5)
+           time.sleep(3)
         print("[] broadcastip exited")
     
     def change_tab(self, webdrv):
@@ -289,30 +289,70 @@ window.current_idx -=1; ''')
                    except exceptions.JavascriptException as e:
                        print(e)
                elif "getthumbnails" in self.data:
+                   print("getthumbnails received")
                    try:
-                       elem_img = self.bro.find_elements_by_xpath('//img[@id="img"]')
-                       elem_txt = self.bro.find_elements_by_xpath('//yt-formatted-string[@id="video-title"]')
-                       thumbs2send = []
+                       try:
+                           for _ in range(3):
+                               # scroll the page so that JS loads some videos to send
+                               self.bro.execute_script('''
+                               window.scrollBy({
+                                 top: 3000,
+                                 behavior: 'smooth'}); ''')
+                               time.sleep(1)
+                       except exceptions.JavascriptException as e:
+                           print(e)
+                       elem_img = self.bro.find_elements_by_xpath('//ytd-thumbnail[@class="style-scope ytd-rich-grid-media"]/a[@id="thumbnail"]/yt-img-shadow[1]/img[@id="img"]')
+                       elem_txt_href = self.bro.find_elements_by_xpath('//div[@id="dismissable"][@class="style-scope ytd-rich-grid-media"]/div[@id="details"]/div[@id="meta"]/h3[1]/a[@id="video-title-link"]')
+
+                       thumbs2send = [] # image list
                        for el in elem_img:
                            try:
                                if el.get_attribute("src").startswith("https://i.ytimg.com/vi"):
                                   thumbs2send.append(el.get_attribute("src"))
+                                  # print("Thumbs: ", thumbs2send)
                            except Exception as e:
                                print("thumbs2send EXCEPTION: ", e)
 
-                       text2send = []
-                       for txt in elem_txt:
+                       text2send = [] # video description
+                       for txt in elem_txt_href:
                            try:
-                               text2send.append(txt.text)
+                               if txt.get_attribute("title"):
+                                   text2send.append(txt.get_attribute("title"))
                            except Exception as e:
                                print("text2send EXCEPTION: ", e)
-                       thumbnail_info = zip(text2send, thumbs2send)
+
+                       href2send = [] # video links
+                       for lnk in elem_txt_href:
+                           try:
+                               # print(lnk.get_attribute("href"))
+                               href2send.append(lnk.get_attribute("href"))
+                           except Exception as e:
+                               print("href2send EXCEPTION: ", e)
+
+                       thumbnail_info = zip(text2send, thumbs2send, href2send)
                        thumbnail_info_l = list(thumbnail_info)
                        self.conn.sendall(pickle.dumps(thumbnail_info_l))
                        print("DATA SENT!!!...")
+                       try:
+                           # scroll back to top of page
+                           self.bro.execute_script('''
+                           window.scrollBy({
+                             top: -9000,
+                             behavior: 'smooth'}); ''')
+                       except exceptions.JavascriptException as e:
+                           print(e)
                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
                        print(e)
                        self.conn.sendall("!! errored out!")
+               elif "playvideo" in self.data:
+                   print("playvideo received")
+                   try:
+                       # self.data.split()[1] is video url received from client
+                       print(self.data.split()[1])
+                       self.bro.get(self.data.split()[1])
+                   except Exception as e:
+                       print("playvideo EXCEPTION: ", e)
+
                elif not self.data:
                    print('No data received')
                self.conn.sendall(b'Hi from server')
