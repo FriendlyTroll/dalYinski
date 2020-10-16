@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.7'
+__version__ = '9.7'
 
 import threading
 
@@ -16,10 +16,11 @@ from kivy.uix.widget import Widget
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, StringProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView 
 from kivy.core.window import Window
+from kivy.uix.spinner import Spinner
 
 # local imports
 from client import DalyinskiClient
@@ -30,6 +31,7 @@ last_cmd = ''
 
 Builder.load_string("""
 <DalyinskiScrMgr>:
+    id: id_scrmgr
     StartScreen:
         id: start_scr
         name: 'start_screen'
@@ -45,132 +47,156 @@ Builder.load_string("""
     id: container
     BoxLayout:
         orientation: 'vertical'
-        Button:
-            text: 'Youtube Home'
-            background_color: (1, 0, 0, 1)
-            on_press: 
-                root.manager.current = 'youtube_thumb_scr' 
-                root.manager.transition.direction = 'left'
-        Button:
-            text: 'Playback'
-            on_press: 
-                root.manager.current = 'playback_screen' 
-                root.manager.transition.direction = 'left'
-
-<PlaybackScreen>:
-
-    btn_play_pause: btn_play_pause
-
-    canvas.before:
-        Rectangle:
-            size: self.size
-            pos: self.pos
-            source: './img/background.png'
-    BoxLayout:
-        id: main_layout
-        orientation: 'vertical'
-        spacing: 2
-        padding: 5
         BoxLayout:
+            ######################
+            # Top row main menu ##
+            ######################
             orientation: 'horizontal'
+            size_hint: (1, 0.08)
             Button:
-                text: 'Start screen'
-                on_release: 
-                    root.manager.current = 'start_screen'
-                    root.manager.transition.direction = 'right'
+                size_hint: (0.2, 1.0)
+                text: 'Main Menu'
+                background_color: 0.90, 0.18, 0.15, 1
+            Label:
+                size_hint: (0.8, 1.0)
+                text: 'Lable placeholder'
+                canvas.before:
+                    Color:
+                        rgba: 0.90, 0.18, 0.15, 1
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                
+        BoxLayout:
+            ######################
+            # Main content area ##
+            ######################
+            orientation: 'vertical'
+            size_hint: (1, 0.92)
+            Button:
+                text: 'Youtube Home'
+                background_color: (1, 0, 0, 1)
+                on_press: 
+                    root.manager.current = 'youtube_thumb_scr' 
+                    root.manager.transition.direction = 'left'
+            Button:
+                text: 'Playback'
+                on_press: 
+                    root.manager.current = 'playback_screen' 
+                    root.manager.transition.direction = 'left'
+
             Button:
                 id: btn_open_browser
                 text: 'Connect to server and open browser'
                 text_size: (150, None)
                 on_release: root.on_press_open_browser()
-        BoxLayout:
-            id: second_row_lyt
-            orientation: 'horizontal'
-            spacing: 1
-            ImageButton:
-                id: btn_watch_later
-                source: './img/baseline_watch_later_black_48.png' if self.state == 'normal' else './img/outline_watch_later_black_48.png'
-                on_release: root.on_press_watch_later()
-            ImageButton:
-                id: btn_scroll_up
-                source: './img/baseline_arrow_upward_black_48.png'
-                on_press: root.on_press_scroll_up()
-            ImageButton:
-                id: btn_subscriptions
-                source: './img/baseline_subscriptions_black_48.png' if self.state == 'normal' else './img/outline_subscriptions_black_48.png'
-                on_release: root.on_press_subscriptions()
-        BoxLayout:
-            id: thumb_btns_lyt
-            orientation: 'horizontal'
-            spacing: 1
-            ImageButton:
-                id: btn_prev_thumb
-                source: './img/baseline_arrow_back_black_48.png'
-                on_press: root.on_press_prev_thumb()
-            ImageButton:
-                id: btn_select_thumb
-                source: './img/baseline_subdirectory_arrow_left_black_48.png'
-                on_press: root.on_press_select_thumb()
-            ImageButton:
-                id: btn_next_thumb
-                source: './img/baseline_arrow_forward_black_48.png'
-                on_press: root.on_press_next_thumb()
-        BoxLayout:
-            id: cpt_sd_st_lyt
-            orientation: 'horizontal'
-            spacing: 1
-            ImageButton:
-                id: btn_captions
-                source: './img/baseline_closed_caption_black_48.png' if self.state == 'normal' else './img/outline_closed_caption_black_48.png'
-                on_release: root.on_press_captions()
-            ImageButton:
-                id: btn_scroll_down
-                source: './img/baseline_arrow_downward_black_48.png'
-                on_press: root.on_press_scroll_down()
-            ImageButton:
-                id: btn_switch_tab
-                source: './img/baseline_tab_black_48.png' if self.state == 'normal' else './img/baseline_tab_unselected_black_48.png'
-                on_release: root.on_press_switch_tab()
-        BoxLayout:
-            id: playback_btns_lyt
-            orientation: 'horizontal'
-            spacing: 1
-            ImageButton:
-                id: btn_play_previous
-                source: './img/baseline_skip_previous_black_48.png' if self.state == 'normal' else './img/outline_skip_previous_black_48.png'
-                on_release: root.on_press_play_previous()
-            PlayPauseButton:
-                id: btn_play_pause
-                on_press: root.on_press_play_pause()
-            ImageButton:
-                id: btn_play_next
-                source: './img/baseline_skip_next_black_48.png' if self.state == 'normal' else './img/outline_skip_next_black_48.png'
-                on_release: root.on_press_play_next()
-        BoxLayout:
-            id: ff_rew_home_btns_lyt
-            orientation: 'horizontal'
-            spacing: 1
-            ImageButton:
-                id: btn_rewind
-                source: './img/baseline_replay_5_black_48.png'
-                on_press: root.on_press_rewind()
-            ImageButton:
-                id: btn_home
-                source: './img/baseline_home_black_48.png' if self.state == 'normal' else './img/outline_home_black_48.png'
-                on_release: root.on_press_go_home()
-            ImageButton:
-                id: btn_forward
-                source: './img/baseline_forward_5_black_48.png'
-                on_press: root.on_press_fforward()
 
-        Button:
-            id: btn_fullscreen
-            text: 'Fullscreen'
-            pos_hint: {'center_x': .5, 'center_y': .5}
-            on_press: root.on_press_fullscreen()
+<PlaybackScreen>:
+
+    btn_play_pause: btn_play_pause
+
+    BoxLayout:
+        orientation: 'vertical'
+        Header:
+        BoxLayout:
+            ######################
+            # Main content area ##
+            ######################
+            canvas.before:
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+                    source: './img/background.png'
+
+            orientation: 'vertical'
+            size_hint: (1, 0.92)
+            BoxLayout:
+                id: second_row_lyt
+                orientation: 'horizontal'
+                spacing: 1
+                ImageButton:
+                    id: btn_watch_later
+                    source: './img/baseline_watch_later_black_48.png' if self.state == 'normal' else './img/outline_watch_later_black_48.png'
+                    on_release: root.on_press_watch_later()
+                ImageButton:
+                    id: btn_scroll_up
+                    source: './img/baseline_arrow_upward_black_48.png'
+                    on_press: root.on_press_scroll_up()
+                ImageButton:
+                    id: btn_subscriptions
+                    source: './img/baseline_subscriptions_black_48.png' if self.state == 'normal' else './img/outline_subscriptions_black_48.png'
+                    on_release: root.on_press_subscriptions()
+            BoxLayout:
+                id: thumb_btns_lyt
+                orientation: 'horizontal'
+                spacing: 1
+                ImageButton:
+                    id: btn_prev_thumb
+                    source: './img/baseline_arrow_back_black_48.png'
+                    on_press: root.on_press_prev_thumb()
+                ImageButton:
+                    id: btn_select_thumb
+                    source: './img/baseline_subdirectory_arrow_left_black_48.png'
+                    on_press: root.on_press_select_thumb()
+                ImageButton:
+                    id: btn_next_thumb
+                    source: './img/baseline_arrow_forward_black_48.png'
+                    on_press: root.on_press_next_thumb()
+            BoxLayout:
+                id: cpt_sd_st_lyt
+                orientation: 'horizontal'
+                spacing: 1
+                ImageButton:
+                    id: btn_captions
+                    source: './img/baseline_closed_caption_black_48.png' if self.state == 'normal' else './img/outline_closed_caption_black_48.png'
+                    on_release: root.on_press_captions()
+                ImageButton:
+                    id: btn_scroll_down
+                    source: './img/baseline_arrow_downward_black_48.png'
+                    on_press: root.on_press_scroll_down()
+                ImageButton:
+                    id: btn_switch_tab
+                    source: './img/baseline_tab_black_48.png' if self.state == 'normal' else './img/baseline_tab_unselected_black_48.png'
+                    on_release: root.on_press_switch_tab()
+            BoxLayout:
+                id: playback_btns_lyt
+                orientation: 'horizontal'
+                spacing: 1
+                ImageButton:
+                    id: btn_play_previous
+                    source: './img/baseline_skip_previous_black_48.png' if self.state == 'normal' else './img/outline_skip_previous_black_48.png'
+                    on_release: root.on_press_play_previous()
+                PlayPauseButton:
+                    id: btn_play_pause
+                    on_press: root.on_press_play_pause()
+                ImageButton:
+                    id: btn_play_next
+                    source: './img/baseline_skip_next_black_48.png' if self.state == 'normal' else './img/outline_skip_next_black_48.png'
+                    on_release: root.on_press_play_next()
+            BoxLayout:
+                id: ff_rew_home_btns_lyt
+                orientation: 'horizontal'
+                spacing: 1
+                ImageButton:
+                    id: btn_rewind
+                    source: './img/baseline_replay_5_black_48.png'
+                    on_press: root.on_press_rewind()
+                ImageButton:
+                    id: btn_home
+                    # source: './img/baseline_fullscreen_black_48.png' if self.state == 'normal' else './img/outline_home_black_48.png'
+                    source: './img/baseline_home_black_48dp.png' if self.state == 'normal' else './img/outline_home_black_48.png'
+                    on_release: root.on_press_go_home()
+                ImageButton:
+                    id: btn_forward
+                    source: './img/baseline_forward_5_black_48.png'
+                    on_press: root.on_press_fforward()
+
+            Button:
+                id: btn_fullscreen
+                text: 'Fullscreen'
+                pos_hint: {'center_x': .5, 'center_y': .5}
+                on_press: root.on_press_fullscreen()
             
-            
-    
 
 <YoutubeThumbScreen>:
     on_pre_enter: 
@@ -178,16 +204,67 @@ Builder.load_string("""
 
     on_pre_leave: root.clear_scroll_view()
 
+
+<Header>: # This is a BoxLayout
+    ######################
+    # Top row main menu ##
+    ######################
+    orientation: 'horizontal'
+    size_hint: (1, 0.08)
+    pos_hint: {'top': 1}
+    Button:
+        size_hint: (0.2, 1.0)
+        on_release: 
+            app.root.current = 'start_screen'
+            app.root.transition.direction = 'right'
+        BoxLayout:
+            pos: self.parent.pos
+            size: self.parent.size
+            Image:
+                size_hint: (0.4, 1.0)
+                source: './img/baseline_arrow_back_black_48dp.png' 
+            Label:
+                size_hint: (0.6, 1.0)
+                text: "Go Back"
+                halign: 'left'
+                valign: 'middle'
+                font_size: '11sp'
+                text_size: self.size
+                bold: 'true'
+    Label:
+        size_hint: (0.6, 1.0)
+        text: 'Lable placeholder'
+        canvas.before:
+            Color:
+                rgba: 0.90, 0.18, 0.15, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+
+<ThumbScreenHeader@Header>:
+    Spinner:
+        id: my_spinner
+        text: 'Test text'
+        size_hint: (0.2, 1.0)
+        values: ("Home", "bureau", "kitchen")
+        on_text: 
+            if my_spinner.text == "Home": app.root.id_scrmgr.play_scr.home_print()
+            else: pass
+
 <ScrollableView>:
     scroll_view_gl: scroll_view_gl
 
-    size_hint: 1, None
+    size_hint: 1, 0.92 # adapt to the header that goes above scrollable GridLayout
+
     on_scroll_stop: root.update_content()
 
+    # videos are dynamically added into this grid layout
     GridLayout:
         id: scroll_view_gl
         cols: 3
         spacing: 2
+        # size_hint: (1, 0.92)
         size_hint_y: None
 
 # These 3 widgets are dynamically added to ScrollableView above
@@ -215,6 +292,13 @@ def show_popup(message='Info'):
     size_hint=(0.8, 0.8), size=(600, 400),
     auto_dismiss=False)
     return popup
+
+class Header(BoxLayout):
+    pass
+
+class ThumbScreenHeader(Header):
+    pass
+
 
 class YTimg(AsyncImage):
     def __init__(self, imgsrc, **kwargs):
@@ -247,6 +331,8 @@ class YTPlay(Button):
 class YoutubeThumbScreen(Screen):
     def add_scroll_view(self):
         self.add_widget(ScrollableView())
+        # self.add_widget(Header())
+        self.add_widget(ThumbScreenHeader())
 
     def clear_scroll_view(self):
         self.clear_widgets()
@@ -279,7 +365,7 @@ class ScrollableView(ScrollView):
         c = DalyinskiClient()
         global video_thumb_urls
         video_thumb_urls = c.recv_thumb_list(b'getthumbnails')
-        self.video_thumb_chunk = list(self.divide_chunks(video_thumb_urls, 7)) # a list of lists of videos
+        self.video_thumb_chunk = list(self.divide_chunks(video_thumb_urls, 10)) # a list of lists of videos
         self.video_urls(self.video_thumb_chunk, chunk_idx=0)
         p.dismiss()
         # print("video thumb chunks >> ", video_thumb_chunk)
@@ -299,19 +385,12 @@ class ScrollableView(ScrollView):
             self.chunk_index += 1
         except IndexError as e:
             print(e)
-            # print("Trying to fetch new list...")
-            # self.get_thumbnails(chunk_idx=self.chunk_index)
 
     def update_content(self):
-        # print("Scroll value Y: ", round(self.scroll_y, 2))
         if round(self.scroll_y, 2) < 0:
-            # c = DalyinskiClient()
-            # c.command(b'scrolldown')
-            print("*** uPDATE CONTENT ***")
+            print("*** UPDATE CONTENT ***")
             print("Chunk idx after ", self.chunk_index)
             self.video_urls(self.video_thumb_chunk, self.chunk_index)
-            # self.chunk_index += 1
-            # sleep(2)
 
     def divide_chunks(self, l, n): 
         '''
@@ -357,18 +436,9 @@ class PlayPauseButton(ButtonBehavior, Image):
 
 
 class StartScreen(Screen):
-    pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-
-class PlaybackScreen(Screen):
-    btn_play_pause = ObjectProperty()
-
-    ############################
-    # PlaybackScreen Callbacks #
-    ############################
-
-    # TODO: maybe use a singleton instead of instantiating new class in every call
-    # https://stackoverflow.com/questions/31875/is-there-a-simple-elegant-way-to-define-singletons
     def _on_press_open_browser(self):
         ''' Private function to call with threading, to prevent gui blocking '''
         p = show_popup('Connecting to server\nand opening web browser...\nPlease wait.')
@@ -381,6 +451,20 @@ class PlaybackScreen(Screen):
         ''' Threading function to call the "real" function '''
         t = threading.Thread(target=self._on_press_open_browser, args=())
         t.start()
+
+
+class PlaybackScreen(Screen):
+    btn_play_pause = ObjectProperty()
+
+    ############################
+    # PlaybackScreen Callbacks #
+    ############################
+
+    def home_print(self):
+        print("callback printing!!!")
+
+    # TODO: maybe use a singleton instead of instantiating new class in every call
+    # https://stackoverflow.com/questions/31875/is-there-a-simple-elegant-way-to-define-singletons
 
     def on_press_play_previous(self):
         ''' For this method and the one below which plays next, we want to update the icon
