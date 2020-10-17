@@ -3,7 +3,9 @@
 __version__ = '9.7'
 
 import threading
+import os
 
+import certifi
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.label import Label
@@ -16,14 +18,19 @@ from kivy.uix.widget import Widget
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty, StringProperty
+from kivy.properties import ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView 
 from kivy.core.window import Window
 from kivy.uix.spinner import Spinner
 
+
 # local imports
 from client import DalyinskiClient
+
+# Fix for when android is not loading the https urls (should be fixed in next kivy release)
+# https://github.com/kivy/python-for-android/issues/1827
+os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # variables for correct display of either play or pause button
 isPaused = True
@@ -245,7 +252,7 @@ Builder.load_string("""
 <ThumbScreenHeader@Header>:
     Spinner:
         id: my_spinner
-        text: 'Test text'
+        text: 'Playlists'
         size_hint: (0.2, 1.0)
         values: ("Home", "bureau", "kitchen")
         on_text: 
