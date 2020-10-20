@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+__version__ = '0.7'
+
 import socket
 import pickle
 import struct
@@ -11,6 +13,7 @@ MAGIC = 'dalyinskimagicpkt'
 
 class DalyinskiClient:
     def __init__(self):
+        self.buf = b''
         # find out the ip address of the server
         global HOST
         if not HOST:
@@ -32,24 +35,29 @@ class DalyinskiClient:
         self.data = self.s.recv(1024)
         print('Received', self.data.decode("utf-8"))
 
-
-
     def recv_thumb_list(self, cmd):
-        ''' Keep receiving all the data sent by the
-        server. '''
+        ''' Adapted from here
+        https://stackoverflow.com/questions/42459499/what-is-the-proper-way-of-sending-a-large-amount-of-data-over-sockets-in-python
+
+        First unpack the first message sent by the server which contains the total
+        length in bytes of the message. This is 4 byte as per struct.unpact "!I" 
+        format specifier (check python struct docs).
+        Then, in while loop, continue reading from the socket at most 4096 bytes,
+        appending to the bytes_recvd until the whole message has been received. 
+        '''
+
         self.s.send(cmd)
-        packets = bytearray()
-        # while True:
-            # print("<<< receiving")
-        packet = self.s.recv(32000)
-            # if not packet: 
-            #     print("BREAKING out of while")
-            #     break
-            # print("+++ appending")
-        packets.extend(packet)
-        # packets = self.recv_msg(self.s)
-        # print("[][][] packets content >", packets)
-        thumbs_lst = pickle.loads(packets)
+        bs = self.s.recv(4)
+        msg_length, = struct.unpack('!I', bs)
+        bytes_rcvd = b''
+        while len(bytes_rcvd) < msg_length:
+            to_read = msg_length - len(bytes_rcvd)
+            print("Bytes to read: ", to_read)
+            print("Bytes already read: ", len(bytes_rcvd))
+            bytes_rcvd += self.s.recv(4096 if to_read > 4096 else to_read)
+
+        print("Received a total of ", len(bytes_rcvd), " bytes")
+        thumbs_lst = pickle.loads(bytes_rcvd)
         # print('[---] Thumbnail list received ', thumbs_lst)
         return thumbs_lst
 

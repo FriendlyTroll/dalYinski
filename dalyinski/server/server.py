@@ -331,7 +331,11 @@ window.current_idx -=1; ''')
 
                        thumbnail_info = zip(text2send, thumbs2send, href2send)
                        thumbnail_info_l = list(thumbnail_info)
-                       self.conn.sendall(pickle.dumps(thumbnail_info_l))
+                       msg = pickle.dumps(thumbnail_info_l)
+                       # header = pickle.dumps(len(msg))
+                       # print("Pickled header is: ", header)
+                       print("Pickled msg lenght is: ", len(msg))
+                       self.send_url_list(self.conn, msg)
                        print("DATA SENT!!!...")
                        try:
                            # scroll back to top of page
@@ -363,12 +367,24 @@ window.current_idx -=1; ''')
            # TODO: clean up the socket on exit and/or Ctrl+C
         self.s.close()
 
+    def send_url_list(self, sock, data):
+        ''' Adapted from here
+        https://stackoverflow.com/questions/42459499/what-is-the-proper-way-of-sending-a-large-amount-of-data-over-sockets-in-python
+
+        Get total length of data in bytes to send and send that as first 
+        4 bytes to the client (check python struct docs). Then send all of the message which the
+        client will read in 4096 byte chunks. See android/client.py.
+        ''' 
+        length = struct.pack('!I', len(data))
+        sock.sendall(length)
+        sock.sendall(data)
     
     def run(self):
         ''' Spawn 2 threads, one for ip discovery other for server itself.
         Threads are spawned as daemon because we don't want the main loop to wait for them to 
         finish when exiting the program. Also, we are not .join()-ing the threads as that
-        blocks the main thread.'''
+        blocks the main thread.
+        '''
 
         self.bcast_t = threading.Thread(target=self.broadcastip, daemon=True)
         self.main_t = threading.Thread(target=self.server_conn, daemon=True)
