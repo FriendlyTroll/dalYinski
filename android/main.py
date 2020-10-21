@@ -95,7 +95,7 @@ Builder.load_string("""
             Button:
                 id: btn_open_browser
                 text: 'Connect to server and open browser'
-                text_size: (150, None)
+                text_size: (400, None)
                 on_release: root.on_press_open_browser()
 
 <PlaybackScreen>:
@@ -105,6 +105,8 @@ Builder.load_string("""
     BoxLayout:
         orientation: 'vertical'
         Header:
+            Banner:
+                text: "Play controls"
         BoxLayout:
             ######################
             # Main content area ##
@@ -206,11 +208,19 @@ Builder.load_string("""
             
 
 <YoutubeThumbScreen>:
-    on_pre_enter: 
-        root.add_scroll_view()
+    on_pre_enter: root.add_scroll_view()
 
     on_pre_leave: root.clear_scroll_view()
 
+<Banner>: # Label class
+    size_hint: (0.6, 1.0)
+    bold: True
+    canvas.before:
+        Color:
+            rgba: 0.90, 0.18, 0.15, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
 
 <Header>: # This is a BoxLayout
     ######################
@@ -238,18 +248,11 @@ Builder.load_string("""
                 font_size: '11sp'
                 text_size: self.size
                 bold: 'true'
-    Label:
-        size_hint: (0.6, 1.0)
-        text: 'Lable placeholder'
-        canvas.before:
-            Color:
-                rgba: 0.90, 0.18, 0.15, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
-
+    
 
 <ThumbScreenHeader@Header>:
+    Banner:
+        text: 'YouTube Home'
     Spinner:
         id: my_spinner
         text: 'Playlists'
@@ -269,20 +272,22 @@ Builder.load_string("""
     # videos are dynamically added into this grid layout
     GridLayout:
         id: scroll_view_gl
+        row_default_height: 300
         cols: 3
-        spacing: 2
-        # size_hint: (1, 0.92)
+        spacing: 1
         size_hint_y: None
 
-# These 3 widgets are dynamically added to ScrollableView above
+# These 3 widgets are dynamically added to GridLayout under ScrollableView above
 <YTimg>:
 
 <YTlbl>:
-    size_hint_y: None
-    text_size: 200, None
+    text_size: self.size
+    valign: 'center'
+    padding_x: '6sp'
+    height: self.texture_size[1]
+    max_lines: 3
 
 <YTPlay>:
-    size_hint_y: None
     text: "Play"
     on_release: 
         root.play_video()
@@ -299,6 +304,9 @@ def show_popup(message='Info'):
     size_hint=(0.8, 0.8), size=(600, 400),
     auto_dismiss=False)
     return popup
+
+class Banner(Label):
+    pass
 
 class Header(BoxLayout):
     pass
@@ -324,21 +332,28 @@ class YTPlay(Button):
         super().__init__(**kwargs)
         self.vidurl = vidurl
 
+    # def on_parent(self, obj, parent):
+        ''' Once this button widget gets a parent set its height
+        relative to parents. We can't do this in kv language
+        because this button is dynamically added.
+        '''
+        # self.height = self.parent.height * 2
+        # self.height = 100
+
     def play_video(self):
         t = threading.Thread(target=self._play_video, daemon=True)
         t.start()
 
     def _play_video(self):
-        ''' Send playvideo command + image url from the video_thumb_urls list
-        which gets passed in the constructor above as imgurl variable
-        so that the server can click on it and start video. '''
+        ''' Send playvideo command + video url from the video_thumb_urls list
+        which gets passed in the constructor above as vidurl variable
+        so that the server can start video. '''
         c = DalyinskiClient()
         c.command(b'playvideo' + b' ' + bytes(self.vidurl, 'utf-8'))
 
 class YoutubeThumbScreen(Screen):
     def add_scroll_view(self):
         self.add_widget(ScrollableView())
-        # self.add_widget(Header())
         self.add_widget(ThumbScreenHeader())
 
     def clear_scroll_view(self):
