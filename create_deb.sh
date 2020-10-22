@@ -9,21 +9,21 @@ set -e
 
 if [[ -z $1 ]]
 then
-    echo "Usage ./create_deb.sh <version>"
+    echo "Usage sudo ./create_deb.sh <version>"
     exit 1
 
 fi
-
+TEMPLATE_DIR=debian-pkg/template
 VERSION="$1"
+
 OLD_VERSION=$(ls debian-pkg/ | awk -F\- '{ print $2 }')
 APP_DIR=debian-pkg/dalyinski-${VERSION}
-APP_DIR_OLD=debian-pkg/dalyinski-${OLD_VERSION}
 BINARY_SRC=dist/dalyinski-server
 BINARY_DST=${APP_DIR}/usr/bin/
 
 echo "[*] Update version string in .desktop, Debian control file and github workflow files"
-sed -i "/Version/s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" ${APP_DIR_OLD}/usr/share/applications/dalYinski.desktop
-sed -i "/Version/s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" ${APP_DIR_OLD}/DEBIAN/control
+sed -i "/Version/s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" ${TEMPLATE_DIR}/usr/share/applications/dalYinski.desktop
+sed -i "/Version/s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" ${TEMPLATE_DIR}/DEBIAN/control
 sed -i "s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" .github/workflows/main.yml
 
 echo "[*] Copy scripts to packaging dir"
@@ -31,7 +31,7 @@ if [[ ! -d ${APP_DIR}/usr/lib/python3/dist-packages/ ]]
 then
     mkdir -p ${APP_DIR}/usr/lib/python3/dist-packages/
 fi
-cp -r ${APP_DIR_OLD}/* ${APP_DIR}
+cp -r ${TEMPLATE_DIR}/* ${APP_DIR}
 cp -r dalyinski ${APP_DIR}/usr/lib/python3/dist-packages/
 cp dalyinski-server.py ${APP_DIR}/usr/bin/dalyinski-server
 
@@ -68,4 +68,4 @@ if [[ -d ${APP_DIR}/usr/lib/python3/dist-packages/dalyinski ]]
 then
     sudo rm -rf ${APP_DIR}/usr/lib/python3/dist-packages/dalyinski
 fi
-rm -rf ${APP_DIR_OLD}
+rm -rf ${APP_DIR}
