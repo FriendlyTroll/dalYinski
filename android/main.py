@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-__version__ = '9.7'
+__version__ = '0.8'
 
 import threading
 import os
 
 import certifi
+import kivy
+kivy.require('1.11.1')
+from kivy.config import Config
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.label import Label
@@ -23,10 +26,14 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView 
 from kivy.core.window import Window
 from kivy.uix.spinner import Spinner
-
+from kivy.logger import Logger
 
 # local imports
 from client import DalyinskiClient
+
+# Load configuration file
+Config.read('dalyinski.ini')
+have_ip = Config.get('DALYINSKI_SERVER', 'ip')
 
 # Fix for when android is not loading the https urls (should be fixed in next kivy release)
 # https://github.com/kivy/python-for-android/issues/1827
@@ -40,18 +47,23 @@ Builder.load_string("""
 <DalyinskiScrMgr>:
     id: id_scrmgr
     StartScreen:
-        id: start_scr
+        id: id_start_scr
         name: 'start_screen'
     YoutubeThumbScreen:
-        id: yt_th_scr
-        name: 'youtube_thumb_scr'
+        id: id_yt_th_scr
+        name: 'youtube_thumb_screen'
     PlaybackScreen:
-        id: play_scr
+        id: id_play_scr
         name: 'playback_screen'
+    ConnectServerScreen:
+        id: id_conn_srv_scr
+        name: 'connect_srv_screen'
+    ReconnectServerScreen:
+        id: id_reconn_srv_scr
+        name: 'reconnect_srv_screen'
 
 <StartScreen>:
-    container: container
-    id: container
+    start_scr_spinner: start_scr_spinner
     BoxLayout:
         orientation: 'vertical'
         BoxLayout:
@@ -60,13 +72,18 @@ Builder.load_string("""
             ######################
             orientation: 'horizontal'
             size_hint: (1, 0.08)
-            Button:
+            Spinner:
+                id: start_scr_spinner
+                text: 'Menu'
                 size_hint: (0.2, 1.0)
-                text: 'Main Menu'
-                background_color: 0.90, 0.18, 0.15, 1
+                values: ("Rediscover server", "About")
+                on_text:
+                    if start_scr_spinner.text == "Rediscover server": root.manager.current = 'reconnect_srv_screen'; root.manager.transition.direction = 'right'
+                    elif start_scr_spinner.text  == "About": root.show_about()
+                    else: pass
             Label:
                 size_hint: (0.8, 1.0)
-                text: 'Lable placeholder'
+                text: "dalYinski YT remote"
                 canvas.before:
                     Color:
                         rgba: 0.90, 0.18, 0.15, 1
@@ -84,7 +101,7 @@ Builder.load_string("""
                 text: 'Youtube Home'
                 background_color: (1, 0, 0, 1)
                 on_press: 
-                    root.manager.current = 'youtube_thumb_scr' 
+                    root.manager.current = 'youtube_thumb_screen' 
                     root.manager.transition.direction = 'left'
             Button:
                 text: 'Playback'
@@ -92,11 +109,32 @@ Builder.load_string("""
                     root.manager.current = 'playback_screen' 
                     root.manager.transition.direction = 'left'
 
-            Button:
-                id: btn_open_browser
-                text: 'Connect to server and open browser'
-                text_size: (400, None)
-                on_release: root.on_press_open_browser()
+<YoutubeThumbScreen>:
+    on_pre_enter: root.add_scroll_view()
+
+    on_pre_leave: root.clear_scroll_view()
+
+
+<ConnectServerScreen>:
+    press_func: root.on_press_open_browser
+    BoxLayout:
+        orientation: 'vertical'
+        Banner:
+            size_hint: (1, 0.08)
+            text: "Establish server connection"
+        Button:
+            text: 'Connect to server and open browser'
+            text_size: (400, None)
+            size_hint: (1, 0.92)
+            halign: 'center'
+            on_release: 
+                root.change_start_scr_spinner_txt()
+                root.press_func()
+                root.manager.current = 'start_screen' 
+                root.manager.transition.direction = 'left'
+
+<ReconnectServerScreen@ConnectServerScreen>:
+    press_func: root.on_press_find_server
 
 <PlaybackScreen>:
 
@@ -105,8 +143,7 @@ Builder.load_string("""
     BoxLayout:
         orientation: 'vertical'
         Header:
-            Banner:
-                text: "Play controls"
+            text: "Play controls"
         BoxLayout:
             ######################
             # Main content area ##
@@ -207,10 +244,6 @@ Builder.load_string("""
                 on_press: root.on_press_fullscreen()
             
 
-<YoutubeThumbScreen>:
-    on_pre_enter: root.add_scroll_view()
-
-    on_pre_leave: root.clear_scroll_view()
 
 <Banner>: # Label class
     size_hint: (0.6, 1.0)
@@ -226,6 +259,8 @@ Builder.load_string("""
     ######################
     # Top row main menu ##
     ######################
+    id: id_header
+    text: ''
     orientation: 'horizontal'
     size_hint: (1, 0.08)
     pos_hint: {'top': 1}
@@ -248,19 +283,20 @@ Builder.load_string("""
                 font_size: '11sp'
                 text_size: self.size
                 bold: 'true'
-    
-
-<ThumbScreenHeader@Header>:
     Banner:
-        text: 'YouTube Home'
+        text: root.text
     Spinner:
-        id: my_spinner
+        id: id_playlist_spinner
         text: 'Playlists'
         size_hint: (0.2, 1.0)
         values: ("Home", "bureau", "kitchen")
         on_text: 
-            if my_spinner.text == "Home": app.root.id_scrmgr.play_scr.home_print()
+            if id_playlist_spinner.text == "Home": app.root.id_scrmgr.id_play_scr.home_print()
             else: pass
+    
+
+<ThumbScreenHeader@Header>:
+    text: 'YouTube Home'
 
 <ScrollableView>:
     scroll_view_gl: scroll_view_gl
@@ -351,13 +387,6 @@ class YTPlay(Button):
         c = DalyinskiClient()
         c.command(b'playvideo' + b' ' + bytes(self.vidurl, 'utf-8'))
 
-class YoutubeThumbScreen(Screen):
-    def add_scroll_view(self):
-        self.add_widget(ScrollableView())
-        self.add_widget(ThumbScreenHeader())
-
-    def clear_scroll_view(self):
-        self.clear_widgets()
 
 video_thumb_urls = [] # this is a list of tuples
 class ScrollableView(ScrollView):
@@ -428,7 +457,6 @@ class ScrollableView(ScrollView):
 #########################
 # Custom button classes #
 #########################
-
 class ImageButton(ButtonBehavior, Image):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -456,11 +484,25 @@ class PlayPauseButton(ButtonBehavior, Image):
             isPaused = False
         last_cmd = 'playpause'
 
-
+#########################
+#       Screens         #
+#########################
 class StartScreen(Screen):
+    start_scr_spinner = ObjectProperty()
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    def show_about(self):
+        popup = Popup(title="About",
+                content=Label(text=f"Ugly app for Youtube remote control :-)\n\
+                        Version: {__version__}"),
+        size_hint=(0.8, 0.8), size=(600, 400),
+        auto_dismiss=True)
+        popup.open()
+        self.parent.ids.id_start_scr.start_scr_spinner.text = 'Menu'
+
+class ConnectServerScreen(Screen):
     def _on_press_open_browser(self):
         ''' Private function to call with threading, to prevent gui blocking '''
         p = show_popup('Connecting to server\nand opening web browser...\nPlease wait.')
@@ -474,16 +516,39 @@ class StartScreen(Screen):
         t = threading.Thread(target=self._on_press_open_browser, args=())
         t.start()
 
+    def _on_press_find_server(self):
+        ''' If the server changed its IP, reset the IP
+        in config file, so the client.py can run the redisovery
+        routine. '''
+        Logger.info("dalYinskiApp: Resetting IP...")
+        Config.set('DALYINSKI_SERVER', 'IP', '')
+        Config.write()
+        self.on_press_open_browser()
+
+    def on_press_find_server(self):
+        t = threading.Thread(target=self._on_press_find_server, args=())
+        t.start()
+
+    def change_start_scr_spinner_txt(self):
+        self.parent.ids.id_start_scr.start_scr_spinner.text = 'Menu'
+
+class ReconnectServerScreen(Screen):
+    pass
+
+
+class YoutubeThumbScreen(Screen):
+    def add_scroll_view(self):
+        self.add_widget(ScrollableView())
+        self.add_widget(ThumbScreenHeader())
+
+    def clear_scroll_view(self):
+        self.clear_widgets()
+
 
 class PlaybackScreen(Screen):
     btn_play_pause = ObjectProperty()
 
-    ############################
-    # PlaybackScreen Callbacks #
-    ############################
-
-    def home_print(self):
-        print("callback printing!!!")
+    # PlaybackScreen Callbacks
 
     # TODO: maybe use a singleton instead of instantiating new class in every call
     # https://stackoverflow.com/questions/31875/is-there-a-simple-elegant-way-to-define-singletons
@@ -583,7 +648,11 @@ class MainApp(App):
 
     def build(self):
         screen_mgr = DalyinskiScrMgr()
-        screen_mgr.current = 'start_screen'
+        # if we don't have a server ip stored in the config show connection screen
+        if have_ip:
+            screen_mgr.current = 'start_screen'
+        else:
+            screen_mgr.current = 'connect_srv_screen'
         return screen_mgr
       
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.7'
+__version__ = '0.8'
 
 import socket
 import time
@@ -364,7 +364,6 @@ window.current_idx -=1; ''')
             # catch scenario where bro variable is not defined because user maybe clicked some other button before opening the webbrowser
            except UnboundLocalError as e:
                print(e)
-           # TODO: clean up the socket on exit and/or Ctrl+C
         self.s.close()
 
     def send_url_list(self, sock, data):
