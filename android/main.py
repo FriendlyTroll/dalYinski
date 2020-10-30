@@ -111,8 +111,8 @@ Builder.load_string("""
 
 <YoutubeThumbScreen>:
     on_pre_enter: root.add_scroll_view()
-
     on_pre_leave: root.clear_scroll_view()
+    on_enter: root.server_is_running()
 
 
 <ConnectServerScreen>:
@@ -137,7 +137,8 @@ Builder.load_string("""
     press_func: root.on_press_find_server
 
 <PlaybackScreen>:
-
+    on_enter: root.server_is_running()
+    
     btn_play_pause: btn_play_pause
 
     BoxLayout:
@@ -334,11 +335,11 @@ Builder.load_string("""
 
 """)
 
-def show_popup(message='Info'):
+def show_popup(message='Info', dismiss=False):
     popup = Popup(title='Info',
     content=Label(text=message),
     size_hint=(0.8, 0.8), size=(600, 400),
-    auto_dismiss=False)
+    auto_dismiss=dismiss)
     return popup
 
 class Banner(Label):
@@ -411,15 +412,21 @@ class ScrollableView(ScrollView):
         t.start()
 
     def _get_thumbnails(self, chunk_idx=0):
-        p = show_popup("Fetching videos... \nPlease wait.")
-        p.open()
         c = DalyinskiClient()
-        global video_thumb_urls
-        video_thumb_urls = c.recv_thumb_list(b'getthumbnails')
-        self.video_thumb_chunk = list(self.divide_chunks(video_thumb_urls, 10)) # a list of lists of videos
-        self.video_urls(self.video_thumb_chunk, chunk_idx=0)
-        p.dismiss()
-        # print("video thumb chunks >> ", video_thumb_chunk)
+        # TODO: maybe use a decorator for checking if the server is up, so that it can be reused
+        if not c.SERVER_RUNNING:
+            p = show_popup("It looks like the server is not running.\nPlease open it.",
+                            dismiss=True)
+            p.open()
+        else:
+            p = show_popup("Fetching videos... \nPlease wait.")
+            p.open()
+            global video_thumb_urls
+            video_thumb_urls = c.recv_thumb_list(b'getthumbnails')
+            self.video_thumb_chunk = list(self.divide_chunks(video_thumb_urls, 10)) # a list of lists of videos
+            self.video_urls(self.video_thumb_chunk, chunk_idx=0)
+            p.dismiss()
+            Logger.debug(f"dalYinskiApp: video thumb chunks >> {video_thumb_chunk}")
 
     @mainthread
     def video_urls(self, video_thumb_chunk, chunk_idx=0):
@@ -439,8 +446,8 @@ class ScrollableView(ScrollView):
 
     def update_content(self):
         if round(self.scroll_y, 2) < 0:
-            print("*** UPDATE CONTENT ***")
-            print("Chunk idx after ", self.chunk_index)
+            Logger.debug("dalYinskiApp: *** UPDATE CONTENT ***")
+            Logger.debug(f"dalYinskiApp: Chunk idx after {self.chunk_index}")
             self.video_urls(self.video_thumb_chunk, self.chunk_index)
 
     def divide_chunks(self, l, n): 
@@ -544,9 +551,30 @@ class YoutubeThumbScreen(Screen):
     def clear_scroll_view(self):
         self.clear_widgets()
 
+    def server_is_running(self):
+        c = DalyinskiClient()
+        # if the server isn't running switch back to start screen
+        if not c.SERVER_RUNNING:
+            p = show_popup("It looks like the server is not running.\nPlease open it.",
+                            dismiss=True)
+            p.open()
+            self.manager.current = 'start_screen'
+        else:
+            pass
 
 class PlaybackScreen(Screen):
     btn_play_pause = ObjectProperty()
+
+    def server_is_running(self):
+        c = DalyinskiClient()
+        # if the server isn't running switch back to start screen
+        if not c.SERVER_RUNNING:
+            p = show_popup("It looks like the server is not running.\nPlease open it.",
+                            dismiss=True)
+            p.open()
+            self.manager.current = 'start_screen'
+        else:
+            pass
 
     # PlaybackScreen Callbacks
 
@@ -554,6 +582,7 @@ class PlaybackScreen(Screen):
     # https://stackoverflow.com/questions/31875/is-there-a-simple-elegant-way-to-define-singletons
 
     def on_press_play_previous(self):
+        # TODO: this is buggy, rework it
         ''' For this method and the one below which plays next, we want to update the icon
         only when the video is paused and we are skipping to the next video. Youtube plays
         the next or previous video automatically when skipping so we are setting the pause
@@ -572,7 +601,12 @@ class PlaybackScreen(Screen):
 
     def on_press_play_pause(self):
         c = DalyinskiClient()
-        c.command(b'playpause')
+        if not c.SERVER_RUNNING:
+            p = show_popup("It looks like the browser is not running.\nPlease open it.",
+                            dismiss=True)
+            p.open()
+        else:
+            c.command(b'playpause')
        
     def on_press_play_next(self):
         global isPaused

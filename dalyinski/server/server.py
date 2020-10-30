@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
+
 __version__ = '0.8'
 
 import socket
@@ -120,7 +122,7 @@ thumbnailList[window.current_idx].click();
 var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
 thumbnailList[window.current_idx - 1].click();
                         ''')
-                    except exceptions.JavascriptException as e:
+                    except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
                        print("Javascript Exception >>", e)
                elif "playpause" in self.data:
                     print('play/pause received')
@@ -129,18 +131,18 @@ thumbnailList[window.current_idx - 1].click();
                         self.bro.find_element_by_xpath("//img[@id='img'][@width='357']").click()
                         print("WATCH LATER play")
                     # no element at all
-                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                         print(e)
                     try:
                         self.bro.find_element_by_xpath("//yt-formatted-string[@id='text']").click() # that annoying "Still watching?" popup
                         print("STILL WATCHING play")
-                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                         print(e)
                         try:
                         # TODO: k BUTTON exception:  Message: (539, -175) is out of bounds of viewport width (1090) and height (807)
                             ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_tag_name('body'), 'k').perform()
                             print("k BUTTON play")
-                        except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException,exceptions.TimeoutException, exceptions.MoveTargetOutOfBoundsException) as e:
+                        except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException,exceptions.TimeoutException, exceptions.MoveTargetOutOfBoundsException, exceptions.WebDriverException, exceptions.InvalidSessionIdException) as e:
                             print("k BUTTON exception: ", e)
                elif "watchlater" in self.data:
                    print('watchlater received')
@@ -148,61 +150,68 @@ thumbnailList[window.current_idx - 1].click();
                    try:
                        # normal situation where elements are visible
                        self.bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@href='/playlist?list=WL']").click() 
-                   except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException) as e:
-                       # hamburger only is visible
-                       self.bro.find_element_by_xpath("//button[@id='button'][@aria-label='Guide']").click() # hamburger element
-                       time.sleep(1) # wait a bit
-                       self.bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@href='/playlist?list=WL']").click() # Watch later element
+                   except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
+                       try:
+                           # hamburger only is visible
+                           self.bro.find_element_by_xpath("//button[@id='button'][@aria-label='Guide']").click() # hamburger element
+                           time.sleep(1) # wait a bit
+                           self.bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@href='/playlist?list=WL']").click() # Watch later element
+                       except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
+                           print("watchlater exception caught: ", e)
                elif "playnext" in self.data:
                    print('playnext received')
                    try:
                        ActionChains(self.bro).key_down(Keys.LEFT_SHIFT).send_keys('n').key_up(Keys.LEFT_SHIFT).perform()
-                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                   except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.InvalidSessionIdException) as e:
                        print(e)
                elif "playprevious" in self.data:
                    print('playprevious received')
                    try:
                        ActionChains(self.bro).key_down(Keys.LEFT_SHIFT).send_keys('p').key_up(Keys.LEFT_SHIFT).perform()
-                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                   except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException, exceptions.InvalidSessionIdException) as e:
                        print(e)
                elif "fullscreen" in self.data:
                    print('fullscreen received')
                    try:
                        self.bro.find_element_by_class_name("ytp-fullscreen-button.ytp-button").click()
-                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                        # mini player is opened, fullscreen it
                        try:
                            self.bro.find_element_by_class_name("ytp-miniplayer-expand-watch-page-button.ytp-button.ytp-miniplayer-button-top-left").click()
                        # no element at all
-                       except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                       except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                            print(e)
                elif "gohome" in self.data:
                    print('gohome received')
                    try:
                        self.bro.find_element_by_class_name("yt-simple-endpoint.style-scope.ytd-topbar-logo-renderer").click()
-                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                        print(e)
                elif "captions" in self.data:
+                   print("captions received")
                    try:
                       self.bro.find_element_by_xpath("//button[@aria-label='Subtitles/closed captions (c)']").click()
-                   except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException) as e:
-                       print(e)
+                   except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
+                       print("captions exception: ", e)
                elif "switchtab" in self.data:
                    print('switchtab received')
-                   print(self.bro.window_handles)
-                   next_tab = self.change_tab(self.bro)
-                   self.bro.switch_to.window(next_tab)
+                   try:
+                       print(self.bro.window_handles)
+                       next_tab = self.change_tab(self.bro)
+                       self.bro.switch_to.window(next_tab)
+                   except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
+                       print("switchtab exception: ", e)
                elif "fforward" in self.data:
                    print('fforward received')
                    try:
                        ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_tag_name('body'), Keys.ARROW_RIGHT).perform()
-                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                        print(e)
                elif "rewind" in self.data:
                    print('rewind received')
                    try:
                        ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_tag_name('body'), Keys.ARROW_LEFT).perform()
-                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
+                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                        print(e)
                elif "nextthumb" in self.data:
                    print('nextthumb received')
@@ -248,7 +257,7 @@ if (current_idx == 0) {
     window.current_idx +=1;
 } ''')
                            self.last_thumbnail_was = 'nextthumb'
-                   except exceptions.JavascriptException as e:
+                   except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
                        print(e)
                elif "prevthumb" in self.data:
                   print('prevthumb received') 
@@ -268,7 +277,7 @@ thumbnailList[window.current_idx].style.removeProperty('border'); // remove bord
 thumbnailList[window.current_idx - 1].style.setProperty('border', '8px inset red'); // draw border on previous thumbnail
 window.current_idx -=1; ''')
                           self.last_thumbnail_was = 'prevthumb'
-                  except exceptions.JavascriptException as e:
+                  except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
                       print(e)
                elif "scrolldown" in self.data:
                    print('scrolldown received')
@@ -277,7 +286,7 @@ window.current_idx -=1; ''')
                        window.scrollBy({
                          top: 350,
                            behavior: 'smooth'}); ''')
-                   except exceptions.JavascriptException as e:
+                   except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
                        print(e)
                elif "scrollup" in self.data:
                    print('scrolldown received')
@@ -286,7 +295,7 @@ window.current_idx -=1; ''')
                        window.scrollBy({
                          top: -350,
                          behavior: 'smooth'}); ''')
-                   except exceptions.JavascriptException as e:
+                   except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
                        print(e)
                elif "getthumbnails" in self.data:
                    print("getthumbnails received")
@@ -299,7 +308,7 @@ window.current_idx -=1; ''')
                                  top: 3000,
                                  behavior: 'smooth'}); ''')
                                time.sleep(1)
-                       except exceptions.JavascriptException as e:
+                       except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
                            print(e)
                        elem_img = self.bro.find_elements_by_xpath('//ytd-thumbnail[@class="style-scope ytd-rich-grid-media"]/a[@id="thumbnail"]/yt-img-shadow[1]/img[@id="img"]')
                        elem_txt_href = self.bro.find_elements_by_xpath('//div[@id="dismissable"][@class="style-scope ytd-rich-grid-media"]/div[@id="details"]/div[@id="meta"]/h3[1]/a[@id="video-title-link"]')
@@ -332,8 +341,6 @@ window.current_idx -=1; ''')
                        thumbnail_info = zip(text2send, thumbs2send, href2send)
                        thumbnail_info_l = list(thumbnail_info)
                        msg = pickle.dumps(thumbnail_info_l)
-                       # header = pickle.dumps(len(msg))
-                       # print("Pickled header is: ", header)
                        print("Pickled msg lenght is: ", len(msg))
                        self.send_url_list(self.conn, msg)
                        print("DATA SENT!!!...")
@@ -345,9 +352,9 @@ window.current_idx -=1; ''')
                              behavior: 'smooth'}); ''')
                        except exceptions.JavascriptException as e:
                            print(e)
-                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException) as e:
-                       print(e)
-                       self.conn.sendall("!! errored out!")
+                   except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
+                       print("getthumbnails exception: ", e)
+                       self.conn.sendall(b"!! getthumbnails errored out!")
                elif "playvideo" in self.data:
                    print("playvideo received")
                    try:
@@ -362,8 +369,9 @@ window.current_idx -=1; ''')
                self.conn.sendall(b'Hi from server')
     
             # catch scenario where bro variable is not defined because user maybe clicked some other button before opening the webbrowser
-           except UnboundLocalError as e:
-               print(e)
+           except (UnboundLocalError, AttributeError) as e:
+               print("Caught error: ", e)
+               self.conn.sendall(b'Server caught error.')
         self.s.close()
 
     def send_url_list(self, sock, data):

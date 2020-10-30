@@ -10,6 +10,8 @@ import threading
 from kivy.config import Config
 from kivy.logger import Logger
 
+SERVER_RUNNING = False
+BROWSER_OPEN = False
 
 class DalyinskiClient:
     def __init__(self):
@@ -40,7 +42,14 @@ class DalyinskiClient:
         # Run below if we already have ip address i.e. HOST is not empty. 
         Logger.info(f"dalYinskiClient: Have server IP of {HOST}")
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.connect((HOST, PORT))
+        try:
+            self.s.connect((HOST, PORT))
+            self.SERVER_RUNNING = True
+        except ConnectionRefusedError as e:
+            self.SERVER_RUNNING = False
+            Logger.info(f"dalYinskiClient: Connection to server refused.\
+                                           Is the server running?")
+
 
     def command(self, cmd):
         self.s.send(cmd)
@@ -52,7 +61,7 @@ class DalyinskiClient:
         https://stackoverflow.com/questions/42459499/what-is-the-proper-way-of-sending-a-large-amount-of-data-over-sockets-in-python
 
         First unpack the first message sent by the server which contains the total
-        length in bytes of the message. This is 4 byte as per struct.unpact "!I" 
+        length in bytes of the message. This is 4 byte as per struct.unpack "!I" 
         format specifier (check python struct docs).
         Then, in while loop, continue reading from the socket at most 4096 bytes,
         appending to the bytes_recvd until the whole message has been received. 
@@ -67,10 +76,17 @@ class DalyinskiClient:
             Logger.info(f"dalYinskiClient: Bytes to read: {to_read}")
             Logger.info(f"dalYinskiClient: Bytes already read: {len(bytes_rcvd)}")
             bytes_rcvd += self.s.recv(4096 if to_read > 4096 else to_read)
+            try:
+                Logger.info(f"dalYinskiClient: {str(bytes_rcvd, 'utf-8')}")
+                if "error" in str(bytes_rcvd, 'utf-8'):
+                    return []
+                    break
+            except UnicodeDecodeError as e:
+                Logger.info(f"dalYinskiClient: Decode error, we probably received length in bytes")
+
 
         Logger.info(f"dalYinskiClient: Received a total of {len(bytes_rcvd)} bytes")
         thumbs_lst = pickle.loads(bytes_rcvd)
         Logger.debug(f"[---] Thumbnail list received {thumbs_lst}")
-        # print('[---] Thumbnail list received ', thumbs_lst)
         return thumbs_lst
 
