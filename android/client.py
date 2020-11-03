@@ -7,8 +7,8 @@ import pickle
 import struct
 import threading
 
-from kivy.config import Config
 from kivy.logger import Logger
+from kivy.storage.jsonstore import JsonStore
 
 SERVER_RUNNING = False
 BROWSER_OPEN = False
@@ -16,9 +16,12 @@ BROWSER_OPEN = False
 class DalyinskiClient:
     def __init__(self):
         # Load configuration file
-        Config.read('dalyinski.ini')
-        have_ip = Config.get('DALYINSKI_SERVER', 'ip')
-        HOST = have_ip # The server's hostname or IP address
+        store = JsonStore('settings.json')
+        if store.exists('connection'):
+            have_ip = store.get('connection')['ip']
+            HOST = have_ip # The server's hostname or IP address
+        else:
+            HOST = None
         PORT = 65432       # The port on which the server is listening
         MAGIC = 'dalyinskimagicpkt'
         
@@ -35,8 +38,7 @@ class DalyinskiClient:
                     # Write ip to config for faster startup in future.
                     Logger.info("dalYinskiClient: Writing IP to config file")
                     HOST = str(HOST, 'utf-8')
-                    Config.set('DALYINSKI_SERVER', 'IP', HOST)
-                    Config.write()
+                    store.put('connection', ip=HOST)
                     break
 
         # Run below if we already have ip address i.e. HOST is not empty. 

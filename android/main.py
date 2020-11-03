@@ -8,7 +8,6 @@ import os
 import certifi
 import kivy
 kivy.require('1.11.1')
-from kivy.config import Config
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.label import Label
@@ -27,13 +26,17 @@ from kivy.uix.scrollview import ScrollView
 from kivy.core.window import Window
 from kivy.uix.spinner import Spinner
 from kivy.logger import Logger
+from kivy.storage.jsonstore import JsonStore
 
 # local imports
 from client import DalyinskiClient
 
 # Load configuration file
-Config.read('dalyinski.ini')
-have_ip = Config.get('DALYINSKI_SERVER', 'ip')
+store = JsonStore('settings.json')
+if store.exists('connection'):
+    have_ip = store.get('connection')['ip']
+else:
+    have_ip = None
 
 # Fix for when android is not loading the https urls (should be fixed in next kivy release)
 # https://github.com/kivy/python-for-android/issues/1827
@@ -529,10 +532,12 @@ class ConnectServerScreen(Screen):
         in config file, so the client.py can run the redisovery
         routine. '''
         Logger.info("dalYinskiApp: Resetting IP...")
-        Config.set('DALYINSKI_SERVER', 'IP', '')
-        Config.write()
+        p = show_popup("Finding server IP...\nPlease wait.")
+        p.open()
+        store.put('connection', ip='')
         c = DalyinskiClient()
         c.command(b'ping')
+        p.dismiss()
         
     def on_press_find_server(self):
         t = threading.Thread(target=self._on_press_find_server, args=())
