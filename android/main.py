@@ -76,10 +76,11 @@ Builder.load_string("""
                 id: start_scr_spinner
                 text: 'Menu'
                 size_hint: (0.2, 1.0)
-                values: ("Rediscover server", "About")
+                values: ("Rediscover server", "Open browser", "About")
                 on_text:
                     if start_scr_spinner.text == "Rediscover server": root.manager.current = 'reconnect_srv_screen'; root.manager.transition.direction = 'right'
                     elif start_scr_spinner.text  == "About": root.show_about()
+                    elif start_scr_spinner.text  == "Open browser": root.on_press_open_browser()
                     else: pass
             Label:
                 size_hint: (0.8, 1.0)
@@ -116,14 +117,14 @@ Builder.load_string("""
 
 
 <ConnectServerScreen>:
-    press_func: root.on_press_open_browser
+    press_func: root.on_press_find_server
     BoxLayout:
         orientation: 'vertical'
         Banner:
             size_hint: (1, 0.08)
             text: "Establish server connection"
         Button:
-            text: 'Connect to server and open browser'
+            text: "Connect to server"
             text_size: (400, None)
             size_hint: (1, 0.92)
             halign: 'center'
@@ -134,7 +135,6 @@ Builder.load_string("""
                 root.manager.transition.direction = 'left'
 
 <ReconnectServerScreen@ConnectServerScreen>:
-    press_func: root.on_press_find_server
 
 <PlaybackScreen>:
     on_enter: root.server_is_running()
@@ -509,10 +509,9 @@ class StartScreen(Screen):
         popup.open()
         self.parent.ids.id_start_scr.start_scr_spinner.text = 'Menu'
 
-class ConnectServerScreen(Screen):
     def _on_press_open_browser(self):
         ''' Private function to call with threading, to prevent gui blocking '''
-        p = show_popup('Connecting to server\nand opening web browser...\nPlease wait.')
+        p = show_popup("Opening web browser...\nPlease wait.")
         p.open()
         c = DalyinskiClient()
         c.command(b'fbro')
@@ -523,6 +522,8 @@ class ConnectServerScreen(Screen):
         t = threading.Thread(target=self._on_press_open_browser, args=())
         t.start()
 
+class ConnectServerScreen(Screen):
+
     def _on_press_find_server(self):
         ''' If the server changed its IP, reset the IP
         in config file, so the client.py can run the redisovery
@@ -530,8 +531,9 @@ class ConnectServerScreen(Screen):
         Logger.info("dalYinskiApp: Resetting IP...")
         Config.set('DALYINSKI_SERVER', 'IP', '')
         Config.write()
-        self.on_press_open_browser()
-
+        c = DalyinskiClient()
+        c.command(b'ping')
+        
     def on_press_find_server(self):
         t = threading.Thread(target=self._on_press_find_server, args=())
         t.start()
