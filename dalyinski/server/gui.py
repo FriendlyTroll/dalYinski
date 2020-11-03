@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.4'
+__version__ = '0.5'
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -19,15 +19,15 @@ class Win (Gtk.Window):
         vbox = Gtk.VBox(False)
 
         # make a startserver button
-        startserver = Gtk.Button("Start server")
-        startserver.connect("clicked",self.run_server)
+        startserver_btn = Gtk.Button("Start server and open browser")
+        startserver_btn.connect("clicked",self.run_server)
 
         # make a quit button
         quit_btn = Gtk.Button("Quit")
         quit_btn.connect("clicked",self.quit)
 
         # add the startserver to the vbox
-        vbox.pack_start(startserver, expand=True, fill=True, padding=0)
+        vbox.pack_start(startserver_btn, expand=True, fill=True, padding=0)
         vbox.pack_start(quit_btn, expand=True, fill=True, padding=0)
         # create a label and add to the vbox
         label=Gtk.Label("Server GUI for dalYinski")
@@ -49,15 +49,17 @@ class Win (Gtk.Window):
     
     def run_server(self, button):
         self.server.run()
-        # set tooltip
-        self.statusicon.set_tooltip_text("The server is running.")
-
-        # show a notification as well
+        # show a notification
         Notify.init('dalYinski server')
         noticon = Notify.Notification.new('dalYinski server', 'Server started', '/usr/share/pixmaps/dalyinski-server.png')
         noticon.show()
+        # set tooltip
+        self.statusicon.set_tooltip_text("The server is running.")
+        self.server.open_browser()
+
 
     def quit(self,button):
+        self.server.close_browser()
         #quit the Gtk main loop
         Gtk.main_quit()
 

@@ -74,6 +74,30 @@ class ServerConn:
                 current_tab = webdrv.window_handles[self.li]
                 return current_tab
     
+    def open_browser(self):
+        ''' Open browser and load profile and install uBlock origin if it exists '''
+        # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
+        self.fp = webdriver.FirefoxProfile(self.browser_profile())
+        Notify.init('dalYinski server')
+        noticon = Notify.Notification.new('dalYinski server', 'Opening web browser', '/usr/share/pixmaps/dalyinski-server.png')
+        noticon.show()
+        self.bro = webdriver.Firefox(self.fp)
+        try:
+            self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
+            if self.ublock_ext:
+                print("Installing uBlock Origin...")
+                self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
+        except FileNotFoundError:
+            print("No uBlock Origin extension found")
+        # bro.fullscreen_window()
+        self.bro.get("https://www.youtube.com/")
+
+    def close_browser(self):
+        try:
+            self.bro.quit()
+        except Exception as e:
+            print("Error when trying to quit browser")
+
     ### Main workhorse ###
     def server_conn(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -90,22 +114,9 @@ class ServerConn:
                self.data = self.conn.recv(1024).decode("utf-8")
                if "fbro" in self.data:
                     print('fbro received')
-                    Notify.init('dalYinski server')
-                    noticon = Notify.Notification.new('dalYinski server', 'Opening web browser', '/usr/share/pixmaps/dalyinski-server.png')
-                    noticon.show()
-                    # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
-                    self.fp = webdriver.FirefoxProfile(self.browser_profile())
-                    self.bro = webdriver.Firefox(self.fp)
-                    # Install ublock origin if it exists
-                    try:
-                        self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
-                        if self.ublock_ext:
-                            print("Installing uBlock Origin...")
-                            self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
-                    except FileNotFoundError:
-                        print("No uBlock Origin extension found")
-                    # bro.fullscreen_window()
-                    self.bro.get("https://www.youtube.com/")
+                    self.open_browser()
+               elif "ping" in self.data:
+                   print("ping received")
                elif "selectthumb" in self.data:
                     try:
                         # Try clicking on selected video on Home page. Keep track of what was the last command received for
