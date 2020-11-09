@@ -2,7 +2,7 @@
 
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 
-__version__ = '0.8'
+__version__ = '0.8.1'
 
 import socket
 import time
@@ -197,7 +197,8 @@ thumbnailList[window.current_idx - 1].click();
                    try:
                        self.bro.find_element_by_class_name("yt-simple-endpoint.style-scope.ytd-topbar-logo-renderer").click()
                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
-                       print(e)
+                       self.bro.get("https://www.youtube.com/")
+                       print(type(e), e)
                elif "captions" in self.data:
                    print("captions received")
                    try:
