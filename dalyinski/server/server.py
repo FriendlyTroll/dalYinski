@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
+# BUG: Handle clicking immediately on fullscreen button
 
 __version__ = '0.8.1'
 
@@ -294,19 +295,13 @@ window.current_idx -=1; ''')
                elif "scrolldown" in self.data:
                    print('scrolldown received')
                    try:
-                       self.bro.execute_script('''
-                       window.scrollBy({
-                         top: 350,
-                           behavior: 'smooth'}); ''')
+                       self.bro.execute_script(self.js_scroll_down(350))
                    except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
                        print(e)
                elif "scrollup" in self.data:
-                   print('scrolldown received')
+                   print('scrollup received')
                    try:
-                       self.bro.execute_script('''
-                       window.scrollBy({
-                         top: -350,
-                         behavior: 'smooth'}); ''')
+                       self.bro.execute_script(self.js_scroll_up(350))
                    except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
                        print(e)
                elif "getthumbnails" in self.data:
@@ -315,58 +310,83 @@ window.current_idx -=1; ''')
                        try:
                            for _ in range(3):
                                # scroll the page so that JS loads some videos to send
-                               self.bro.execute_script('''
-                               window.scrollBy({
-                                 top: 3000,
-                                 behavior: 'smooth'}); ''')
+                               self.bro.execute_script(self.js_scroll_down(3000))
                                time.sleep(1)
                        except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
-                           print(e)
+                           print(type(e), e)
+
+                       # stuff we're going to send to client
                        elem_img = self.bro.find_elements_by_xpath('//ytd-thumbnail[@class="style-scope ytd-rich-grid-media"]/a[@id="thumbnail"]/yt-img-shadow[1]/img[@id="img"]')
                        elem_txt_href = self.bro.find_elements_by_xpath('//div[@id="dismissable"][@class="style-scope ytd-rich-grid-media"]/div[@id="details"]/div[@id="meta"]/h3[1]/a[@id="video-title-link"]')
 
-                       thumbs2send = [] # image list
-                       for el in elem_img:
-                           try:
-                               if el.get_attribute("src").startswith("https://i.ytimg.com/vi"):
-                                  thumbs2send.append(el.get_attribute("src"))
-                                  # print("Thumbs: ", thumbs2send)
-                           except Exception as e:
-                               print("thumbs2send EXCEPTION: ", e)
-
-                       text2send = [] # video description
-                       for txt in elem_txt_href:
-                           try:
-                               if txt.get_attribute("title"):
-                                   text2send.append(txt.get_attribute("title"))
-                           except Exception as e:
-                               print("text2send EXCEPTION: ", e)
-
-                       href2send = [] # video links
-                       for lnk in elem_txt_href:
-                           try:
-                               # print(lnk.get_attribute("href"))
-                               href2send.append(lnk.get_attribute("href"))
-                           except Exception as e:
-                               print("href2send EXCEPTION: ", e)
-
-                       thumbnail_info = zip(text2send, thumbs2send, href2send)
-                       thumbnail_info_l = list(thumbnail_info)
-                       msg = pickle.dumps(thumbnail_info_l)
-                       print("Pickled msg lenght is: ", len(msg))
-                       self.send_url_list(self.conn, msg)
-                       print("DATA SENT!!!...")
+                       self.zip_lists(elem_img, elem_txt_href)
                        try:
                            # scroll back to top of page
-                           self.bro.execute_script('''
-                           window.scrollBy({
-                             top: -9000,
-                             behavior: 'smooth'}); ''')
+                           self.bro.execute_script(self.js_scroll_up(9000))
                        except exceptions.JavascriptException as e:
                            print(e)
                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                        print("getthumbnails exception: ", e)
                        self.conn.sendall(b"!! getthumbnails errored out!")
+               elif "getplaylistthumbnails" in self.data:
+                   print("getplaylistthumbnails received")
+                   try:
+                       # Get document height so that we scroll certain amount of times for the videos to load
+                       document_height = self.bro.execute_script('return document.documentElement.scrollHeight')
+                       scroll_amount = int(document_height/2000) + 1
+                       for _ in range(scroll_amount):
+                               # wait for stuff to load
+                               time.sleep(0.75)
+                               self.bro.execute_script(self.js_scroll_down(2000))
+
+                       elem_img = self.bro.find_elements_by_xpath('//ytd-thumbnail[@id="thumbnail"][@class="style-scope ytd-playlist-video-renderer"]/a[@id="thumbnail"]/yt-img-shadow/img[@id="img"]')
+                       elem_href = self.bro.find_elements_by_xpath('//a[@class="yt-simple-endpoint style-scope ytd-playlist-video-renderer"]')
+                       elem_vid_desc = self.bro.find_elements_by_xpath('//div[@id="meta"][@class="style-scope ytd-playlist-video-renderer"]/h3/span[@id="video-title"]')
+
+                       self.zip_lists(elem_img, elem_href, plst_vid_desc=elem_vid_desc)
+                   except Exception as e:
+                       print("getplaylistthumbnails exception: ", type(e), e)
+                       self.conn.sendall(b"!! getplaylistthumbnails errored out!")
+               elif "getplaylists" in self.data:
+                   print("getplaylists received")
+                   try:
+                       try:
+                           # expand "Show more" first
+                           self.bro.find_element_by_xpath('//a[@title="Show more"]').click()
+                       except exceptions.ElementNotInteractableException as e:
+                           print("Show more exception: ", type(e), e)
+                       except exceptions.NoSuchElementException as e:
+                           print("Show more exception: ", type(e), e)
+                           # Open hamburger menu and locate the element
+                           self.bro.find_element_by_xpath("//button[@id='button'][@aria-label='Guide']").click() # hamburger element
+                           time.sleep(1) # wait a bit
+                           self.bro.find_element_by_xpath('//a[@title="Show more"]').click()
+
+                       # Your videos, Your movies and Watch later elements
+                       vid_mv_wl = self.bro.find_elements_by_xpath('//div[@id="section-items"]/ytd-guide-entry-renderer/a[@id="endpoint"][@class="yt-simple-endpoint style-scope ytd-guide-entry-renderer"]')
+                       # Rest of collapsible elements where user playlists are
+                       collaps_entries = self.bro.find_elements_by_xpath('//ytd-guide-collapsible-entry-renderer/div[@id="expanded"]/div[@id="expandable-items"]/ytd-guide-entry-renderer/a[@id="endpoint"][@class="yt-simple-endpoint style-scope ytd-guide-entry-renderer"]')
+
+                       usr_playlists = [] # combo of above 2 lists, a list of tuples of playlist name and link
+                       for el in vid_mv_wl:
+                           try:
+                               usr_playlists.append((el.get_attribute("title"), el.get_attribute("href")))
+                           except Exception as e:
+                               print("vid_mv_wl EXCEPTION: ", e)
+
+                       for el in collaps_entries:
+                           try:
+                               usr_playlists.append((el.get_attribute("title"), el.get_attribute("href")))
+                           except Exception as e:
+                               print("collaps_entries EXCEPTION: ", e)
+
+                       msg = pickle.dumps(usr_playlists)
+                       print("Pickled msg lenght is: ", len(msg))
+                       self.send_url_list(self.conn, msg)
+                       print("DATA SENT!!!...")
+                   except Exception as e:
+                       print("getplaylists exception: ", type(e), e)
+                       self.conn.sendall(b"!! getplaylists errored out!")
                elif "playvideo" in self.data:
                    print("playvideo received")
                    try:
@@ -376,6 +396,12 @@ window.current_idx -=1; ''')
                    except Exception as e:
                        print("playvideo EXCEPTION: ", e)
 
+               elif "subscriptions" in self.data:
+                   print("subscriptions received")
+                   try:
+                      self.bro.find_element_by_xpath("//a[@id='endpoint'][@title='Subscriptions']/paper-item/yt-icon").click()
+                   except Exception as e:
+                       print("subscriptions EXCEPTION: ", e)
                elif not self.data:
                    print('No data received')
                self.conn.sendall(b'Hi from server')
@@ -398,6 +424,60 @@ window.current_idx -=1; ''')
         sock.sendall(length)
         sock.sendall(data)
     
+    def zip_lists(self, elem_img, elem_txt_href, plst_vid_desc=None):
+        ''' Take in 2 lists, one with images one with descriptions
+        and zip them up and send over socket. '''
+        thumbs2send = [] # image list
+        for el in elem_img:
+            try:
+                if el.get_attribute("src").startswith("https://i.ytimg.com/vi"):
+                   thumbs2send.append(el.get_attribute("src"))
+            except Exception as e:
+                print("thumbs2send EXCEPTION: ", type(e), e)
+        # print("Thumbs: ", thumbs2send)
+
+        if plst_vid_desc:
+            text2send = []
+            for txt in plst_vid_desc:
+                try:
+                    if txt.get_attribute("title"):
+                        text2send.append(txt.get_attribute("title"))
+                except Exception as e:
+                    print("text2send EXCEPTION: ", type(e), e)
+            # print("Vid desc: ", text2send)
+        else:
+            text2send = [] # video description
+            for txt in elem_txt_href:
+                try:
+                    if txt.get_attribute("title"):
+                        text2send.append(txt.get_attribute("title"))
+                except Exception as e:
+                    print("text2send EXCEPTION: ", type(e), e)
+            # print("Vid desc: ", text2send)
+
+        href2send = [] # video links
+        for lnk in elem_txt_href:
+            try:
+                href2send.append(lnk.get_attribute("href"))
+            except Exception as e:
+                print("href2send EXCEPTION: ", type(e), e)
+        # print("Links  ", href2send)
+
+        thumbnail_info = zip(text2send, thumbs2send, href2send)
+        thumbnail_info_l = list(thumbnail_info)
+        msg = pickle.dumps(thumbnail_info_l)
+        print("Pickled msg lenght is: ", len(msg))
+        self.send_url_list(self.conn, msg)
+        print("DATA SENT!!!...")
+
+    def js_scroll_down(self, n_pixels):
+        '''Scroll down using javascript by n_pixels. Double curvy brackets are
+        needed for the .format method to work correctly. '''
+        return '''window.scrollBy({{ top: {px}, behavior: 'smooth'}});'''.format(px=n_pixels)
+    
+    def js_scroll_up(self, n_pixels):
+        return '''window.scrollBy({{ top: -{px}, behavior: 'smooth'}}); '''.format(px=n_pixels)
+
     def run(self):
         ''' Spawn 2 threads, one for ip discovery other for server itself.
         Threads are spawned as daemon because we don't want the main loop to wait for them to 

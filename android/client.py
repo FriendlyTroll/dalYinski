@@ -59,6 +59,16 @@ class DalyinskiClient:
         print('Received', self.data.decode("utf-8"))
 
     def recv_thumb_list(self, cmd):
+        self.s.send(cmd)
+        thumbs_lst = self.recv_data()
+        return thumbs_lst
+
+    def recv_playlists(self, cmd):
+        self.s.send(cmd)
+        play_lst = self.recv_data()
+        return play_lst
+
+    def recv_data(self):
         ''' Adapted from here
         https://stackoverflow.com/questions/42459499/what-is-the-proper-way-of-sending-a-large-amount-of-data-over-sockets-in-python
 
@@ -68,8 +78,6 @@ class DalyinskiClient:
         Then, in while loop, continue reading from the socket at most 4096 bytes,
         appending to the bytes_recvd until the whole message has been received. 
         '''
-
-        self.s.send(cmd)
         bs = self.s.recv(4)
         msg_length, = struct.unpack('!I', bs)
         bytes_rcvd = b''
@@ -88,7 +96,6 @@ class DalyinskiClient:
 
 
         Logger.info(f"dalYinskiClient: Received a total of {len(bytes_rcvd)} bytes")
-        thumbs_lst = pickle.loads(bytes_rcvd)
-        Logger.debug(f"[---] Thumbnail list received {thumbs_lst}")
-        return thumbs_lst
-
+        data = pickle.loads(bytes_rcvd)
+        Logger.debug(f"dalYinskiClient: Received from server: {data}")
+        return data

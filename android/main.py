@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+# BUG: handle utf-8 chars in thumbnail screen (e.g. japanese chars not show correctly)
 __version__ = '0.8'
 
 import threading
 import os
+import time
 
 import certifi
 import kivy
@@ -50,11 +52,7 @@ Builder.load_string("""
 <DalyinskiScrMgr>:
     id: id_scrmgr
     StartScreen:
-        id: id_start_scr
-        name: 'start_screen'
     YoutubeThumbScreen:
-        id: id_yt_th_scr
-        name: 'youtube_thumb_screen'
     PlaybackScreen:
         id: id_play_scr
         name: 'playback_screen'
@@ -64,8 +62,11 @@ Builder.load_string("""
     ReconnectServerScreen:
         id: id_reconn_srv_scr
         name: 'reconnect_srv_screen'
+    PlaylistsScreen:
 
 <StartScreen>:
+    id: id_start_scr
+    name: 'start_screen'
     start_scr_spinner: start_scr_spinner
     BoxLayout:
         orientation: 'vertical'
@@ -114,6 +115,8 @@ Builder.load_string("""
                     root.manager.transition.direction = 'left'
 
 <YoutubeThumbScreen>:
+    id: id_yt_th_scr
+    name: 'youtube_thumb_screen'
     on_pre_enter: root.add_scroll_view()
     on_pre_leave: root.clear_scroll_view()
     on_enter: root.server_is_running()
@@ -145,6 +148,7 @@ Builder.load_string("""
     btn_play_pause: btn_play_pause
 
     BoxLayout:
+        id: id_bl_in_playback_scr
         orientation: 'vertical'
         Header:
             text: "Play controls"
@@ -248,6 +252,13 @@ Builder.load_string("""
                 on_press: root.on_press_fullscreen()
             
 
+<PlaylistsScreen>:
+    id: id_playlists_scr
+    name: 'playlists_screen'
+    on_enter: root.add_scroll_view()
+    on_leave: 
+        root.clear_scroll_view()
+        app.last_screen = "playlists_screen"
 
 <Banner>: # Label class
     size_hint: (0.6, 1.0)
@@ -271,6 +282,8 @@ Builder.load_string("""
     Button:
         size_hint: (0.2, 1.0)
         on_release: 
+            root.on_press_go_home()
+            app.last_screen = "start_screen"
             app.root.current = 'start_screen'
             app.root.transition.direction = 'right'
         BoxLayout:
@@ -289,21 +302,43 @@ Builder.load_string("""
                 bold: 'true'
     Banner:
         text: root.text
-    Spinner:
-        id: id_playlist_spinner
-        text: 'Playlists'
+    Button:
+        text: "Playlists"
         size_hint: (0.2, 1.0)
-        values: ("Home", "bureau", "kitchen")
-        on_text: 
-            if id_playlist_spinner.text == "Home": app.root.id_scrmgr.id_play_scr.home_print()
-            else: pass
+        on_release:
+            app.root.current = 'playlists_screen'
+            app.root.transition.direction = 'left'
+    #Spinner:
+    #    id: id_playlist_spinner
+    #    text: "Playlists"
+    #    size_hint: (0.2, 1.0)
+    #    values: ("Trending", "Subscriptions", "Library", "History")
+    #    on_text: 
+    #        if id_playlist_spinner.text == "Subscriptions": root.go_subscriptions(); id_playlist_spinner.text = "Playlists"
+    #        else: pass
     
 
 <ThumbScreenHeader@Header>:
     text: 'YouTube Home'
 
-<ScrollableView>:
-    scroll_view_gl: scroll_view_gl
+<PlaylistsHeader@Header>:
+    text: 'Your playlists'
+
+<ScrollableViewPlaylists>:
+    scroll_view_plst: scroll_view_plst
+
+    size_hint: 1, 0.92 # adapt to the header that goes above scrollable GridLayout
+
+    GridLayout:
+        id: scroll_view_plst
+        row_default_height: 100
+        cols: 1
+        spacing: 1
+        size_hint_y: None
+        padding: (10, 0)
+
+<ScrollableViewYThumbScreen>:
+    scroll_view_yt_gl: scroll_view_yt_gl
 
     size_hint: 1, 0.92 # adapt to the header that goes above scrollable GridLayout
 
@@ -311,13 +346,13 @@ Builder.load_string("""
 
     # videos are dynamically added into this grid layout
     GridLayout:
-        id: scroll_view_gl
+        id: scroll_view_yt_gl
         row_default_height: 300
         cols: 3
         spacing: 1
         size_hint_y: None
 
-# These 3 widgets are dynamically added to GridLayout under ScrollableView above
+# These 3 widgets are dynamically added to GridLayout under ScrollableViewYThumbScreen above
 <YTimg>:
 
 <YTlbl>:
@@ -334,6 +369,11 @@ Builder.load_string("""
         app.root.current = 'playback_screen'
         app.root.transition.direction = 'right'
 
+# Dynamically added to ScrollableViewPlaylists
+<PlstBtn>:
+    on_press: 
+        root.select_playlist()
+        app.root.current = 'youtube_thumb_screen'
 
 
 """)
@@ -348,10 +388,23 @@ def show_popup(message='Info', dismiss=False):
 class Banner(Label):
     pass
 
+
 class Header(BoxLayout):
-    pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def go_subscriptions(self):
+        c = DalyinskiClient()
+        c.command(b'subscriptions')
+
+    def on_press_go_home(self):
+        PlaybackScreen().on_press_go_home()
 
 class ThumbScreenHeader(Header):
+    pass
+
+
+class PlaylistsHeader(Header):
     pass
 
 
@@ -367,6 +420,117 @@ class YTlbl(Label):
         self.text = labeltext
 
 
+video_thumb_urls = [] # this is a list of tuples
+class ScrollableViewYThumbScreen(ScrollView):
+    scroll_view_yt_gl = ObjectProperty()
+
+    def __init__(self, client_cmd=b'getthumbnails', **kwargs):
+        super().__init__(**kwargs)
+        self.size = (Window.width, Window.height)
+        self.scroll_view_yt_gl.bind(minimum_height=self.scroll_view_yt_gl.setter('height'))
+        self.chunk_index = 0 # keep track on which chunk in the list we are
+        self.video_thumb_chunk = []
+        # If we are coming from playlists screen, send a different command to fetch correct results from server and wait until the youtube playlist page is loaded on server side
+        if app.last_screen == "playlists_screen":
+            self.pf = show_popup("Fetching videos... \nPlease wait.")
+            self.pf.open()
+            time.sleep(1)
+            self.client_cmd = b'getplaylistthumbnails'
+        elif app.last_screen == "start_screen":
+            self.pf = show_popup("Fetching videos... \nPlease wait.")
+            self.pf.open()
+            c = DalyinskiClient()
+            self.client_cmd = client_cmd
+        self.get_thumbnails()
+
+    def get_thumbnails(self, chunk_idx=0):
+        ''' We can't do any UI updates from a separate thread.
+        That's why we are calling a separate function (video_urls()) from
+        the threaded function (_get_thumbnails()) and scheduling
+        it on the main thread via @mainthread decorator from kivy.clock 
+        module '''
+        t = threading.Thread(target=self._get_thumbnails, args=(chunk_idx,), daemon=True)
+        t.start()
+
+    def _get_thumbnails(self, chunk_idx=0):
+        c = DalyinskiClient()
+        # TODO: maybe use a decorator for checking if the server is up, so that it can be reused
+        if not c.SERVER_RUNNING:
+            p = show_popup("It looks like the server is not running.\nPlease open it.",
+                            dismiss=True)
+            p.open()
+        else:
+            global video_thumb_urls
+            video_thumb_urls = c.recv_thumb_list(self.client_cmd)
+            self.video_thumb_chunk = list(self.divide_chunks(video_thumb_urls, 10)) # a list of lists of videos
+            self.video_urls(self.video_thumb_chunk, chunk_idx=0)
+            self.pf.dismiss()
+            Logger.debug(f"dalYinskiApp: video thumb chunks >> {self.video_thumb_chunk}")
+
+    @mainthread
+    def video_urls(self, video_thumb_chunk, chunk_idx=0):
+        try:
+            vid_sublist = video_thumb_chunk[chunk_idx]
+            Logger.info(f"dalYinskiApp: Chunk index: {self.chunk_index}, of list length {len(video_thumb_chunk)}")
+            for thumb in vid_sublist:
+                # Logger.info(f"dalYinskiApp: DESCRIPTION: {thumb[0]}")
+                # Logger.info(f"dalYinskiApp: IMAGE LINK: {thumb[1]}")
+                # Logger.info(f"dalYinskiApp: VIDEO LINK: {thumb[2]}")
+                self.scroll_view_yt_gl.add_widget(YTimg(thumb[1]))
+                self.scroll_view_yt_gl.add_widget(YTlbl(thumb[0]))
+                self.scroll_view_yt_gl.add_widget(YTPlay(thumb[2])) # send video url to constructor
+            self.chunk_index += 1
+        except IndexError as e:
+            Logger.info(f"dalYinskiApp: {type(e)} {e}")
+
+    def update_content(self):
+        if round(self.scroll_y, 2) < 0:
+            Logger.debug("dalYinskiApp: *** UPDATE CONTENT ***")
+            Logger.debug(f"dalYinskiApp: Chunk idx after {self.chunk_index}")
+            self.video_urls(self.video_thumb_chunk, self.chunk_index)
+
+    def divide_chunks(self, l, n): 
+        '''
+        Yield successive n-sized 
+        chunks from list l. '''
+          
+        # looping till length l 
+        for i in range(0, len(l), n):  
+            yield l[i:i + n] 
+    
+class ScrollableViewPlaylists(ScrollView):
+    scroll_view_plst = ObjectProperty()
+            
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size = (Window.width, Window.height)
+        self.scroll_view_plst.bind(minimum_height=self.scroll_view_plst.setter('height'))
+        self.get_playlists()
+
+    def get_playlists(self):
+        t = threading.Thread(target=self._get_playlists, daemon=True)
+        t.start()
+
+    def _get_playlists(self):
+        c = DalyinskiClient()
+
+        if not c.SERVER_RUNNING:
+            p = show_popup("It looks like the server is not running.\nPlease open it.",
+                            dismiss=True)
+            p.open()
+        else:
+            p = show_popup("Fetching playlists... \nPlease wait.")
+            p.open()
+            usr_playlists = c.recv_playlists(b'getplaylists') # a list of tuples of playlist name and link
+            Logger.debug(f"dalYinskiApp: Got list of playlists: {usr_playlists}")
+            for plst in usr_playlists:
+                self.scroll_view_plst.add_widget(PlstBtn(str(plst[1]), text=str(plst[0]))) # plst[1] is playlist link (sent to the constructor in order to open it), plst[0] is playlist name
+            p.dismiss()
+
+
+#########################
+# Custom button classes #
+#########################
 class YTPlay(Button):
     def __init__(self, vidurl, **kwargs):
         super().__init__(**kwargs)
@@ -392,81 +556,6 @@ class YTPlay(Button):
         c.command(b'playvideo' + b' ' + bytes(self.vidurl, 'utf-8'))
 
 
-video_thumb_urls = [] # this is a list of tuples
-class ScrollableView(ScrollView):
-    scroll_view_gl = ObjectProperty()
-
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.size = (Window.width, Window.height)
-        self.scroll_view_gl.bind(minimum_height=self.scroll_view_gl.setter('height'))
-        self.get_thumbnails()
-        self.chunk_index = 0 # keep track on which chunk in the list we are
-        self.video_thumb_chunk = []
-
-    def get_thumbnails(self, chunk_idx=0):
-        ''' We can't do any UI updates from a separate thread.
-        That's why we are calling a separate function (video_urls()) from
-        the threaded function (_get_thumbnails()) and scheduling
-        it on the main thread via @mainthread decorator from kivy.clock 
-        module '''
-        t = threading.Thread(target=self._get_thumbnails, args=(chunk_idx,), daemon=True)
-        t.start()
-
-    def _get_thumbnails(self, chunk_idx=0):
-        c = DalyinskiClient()
-        # TODO: maybe use a decorator for checking if the server is up, so that it can be reused
-        if not c.SERVER_RUNNING:
-            p = show_popup("It looks like the server is not running.\nPlease open it.",
-                            dismiss=True)
-            p.open()
-        else:
-            p = show_popup("Fetching videos... \nPlease wait.")
-            p.open()
-            global video_thumb_urls
-            video_thumb_urls = c.recv_thumb_list(b'getthumbnails')
-            self.video_thumb_chunk = list(self.divide_chunks(video_thumb_urls, 10)) # a list of lists of videos
-            self.video_urls(self.video_thumb_chunk, chunk_idx=0)
-            p.dismiss()
-            Logger.debug(f"dalYinskiApp: video thumb chunks >> {video_thumb_chunk}")
-
-    @mainthread
-    def video_urls(self, video_thumb_chunk, chunk_idx=0):
-        try:
-            vid_sublist = video_thumb_chunk[chunk_idx]
-            print("Chunk index: ", self.chunk_index, " of list length ", len(video_thumb_chunk))
-            for thumb in vid_sublist:
-                # print("DESCRIPTION: ", thumb[0])
-                # print("IMAGE LINK: ", thumb[1])
-                # print("VIDEO LINK: ", thumb[2])
-                self.scroll_view_gl.add_widget(YTimg(thumb[1]))
-                self.scroll_view_gl.add_widget(YTlbl(thumb[0]))
-                self.scroll_view_gl.add_widget(YTPlay(thumb[2])) # send video url to constructor
-            self.chunk_index += 1
-        except IndexError as e:
-            print(e)
-
-    def update_content(self):
-        if round(self.scroll_y, 2) < 0:
-            Logger.debug("dalYinskiApp: *** UPDATE CONTENT ***")
-            Logger.debug(f"dalYinskiApp: Chunk idx after {self.chunk_index}")
-            self.video_urls(self.video_thumb_chunk, self.chunk_index)
-
-    def divide_chunks(self, l, n): 
-        '''
-        Yield successive n-sized 
-        chunks from list l. '''
-          
-        # looping till length l 
-        for i in range(0, len(l), n):  
-            yield l[i:i + n] 
-    
-            
-
-#########################
-# Custom button classes #
-#########################
 class ImageButton(ButtonBehavior, Image):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -494,6 +583,23 @@ class PlayPauseButton(ButtonBehavior, Image):
             isPaused = False
         last_cmd = 'playpause'
 
+class PlstBtn(Button):
+    def __init__(self, vidurl, **kwargs):
+        super().__init__(**kwargs)
+        self.vidurl = vidurl
+
+    def select_playlist(self):
+        t = threading.Thread(target=self._select_playlist, daemon=True)
+        t.start()
+
+    def _select_playlist(self):
+        ''' Send playvideo command + video url from the list
+        which gets passed in the constructor above as vidurl variable
+        so that the server can start video. '''
+        c = DalyinskiClient()
+        c.command(b'playvideo' + b' ' + bytes(self.vidurl, 'utf-8'))
+
+
 #########################
 #       Screens         #
 #########################
@@ -502,6 +608,8 @@ class StartScreen(Screen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        Logger.info(f"dalYinskiApp: Last screen was: {app.last_screen}")
+        app.last_screen = "start_screen"
 
     def show_about(self):
         popup = Popup(title="About",
@@ -510,6 +618,7 @@ class StartScreen(Screen):
         size_hint=(0.8, 0.8), size=(600, 400),
         auto_dismiss=True)
         popup.open()
+        # Logger.info(f"dalYinskiApp: {self.parent.ids}")
         self.parent.ids.id_start_scr.start_scr_spinner.text = 'Menu'
 
     def _on_press_open_browser(self):
@@ -552,8 +661,14 @@ class ReconnectServerScreen(Screen):
 
 class YoutubeThumbScreen(Screen):
     def add_scroll_view(self):
-        self.add_widget(ScrollableView())
+        t = threading.Thread(target=self._add_scroll_view, args=())
+        t.start()
+
+    def _add_scroll_view(self):
+        self.add_widget(ScrollableViewYThumbScreen())
         self.add_widget(ThumbScreenHeader())
+        Logger.info(f"dalYinskiApp: Current screen: youtube_thumb_screen; Last screen was: {app.last_screen}")
+        app.last_screen = "youtube_thumb_screen"
 
     def clear_scroll_view(self):
         self.clear_widgets()
@@ -569,6 +684,16 @@ class YoutubeThumbScreen(Screen):
         else:
             pass
 
+class PlaylistsScreen(Screen):
+    def add_scroll_view(self):
+        self.add_widget(ScrollableViewPlaylists())
+        self.add_widget(PlaylistsHeader())
+        Logger.info(f"dalYinskiApp: Current screen: PlaylistsScreen; Last screen was: {app.last_screen}")
+        app.last_screen = "playlists_screen"
+
+    def clear_scroll_view(self):
+        self.clear_widgets()
+
 class PlaybackScreen(Screen):
     btn_play_pause = ObjectProperty()
 
@@ -582,8 +707,6 @@ class PlaybackScreen(Screen):
             self.manager.current = 'start_screen'
         else:
             pass
-
-    # PlaybackScreen Callbacks
 
     # TODO: maybe use a singleton instead of instantiating new class in every call
     # https://stackoverflow.com/questions/31875/is-there-a-simple-elegant-way-to-define-singletons
@@ -677,15 +800,16 @@ class PlaybackScreen(Screen):
         c.command(b'scrollup')
 
     def on_press_subscriptions(self):
-        pass
-        # c = DalyinskiClient()
-        # c.command(b'scrollup')
+        c = DalyinskiClient()
+        c.command(b'subscriptions')
 
 class DalyinskiScrMgr(ScreenManager):
     pass
 
+
 class MainApp(App):
     title = "DalYinski"
+    last_screen = None
 
     def build(self):
         screen_mgr = DalyinskiScrMgr()
