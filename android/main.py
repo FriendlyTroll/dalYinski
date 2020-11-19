@@ -52,6 +52,7 @@ Builder.load_string("""
 <DalyinskiScrMgr>:
     id: id_scrmgr
     StartScreen:
+        id: id_start_scr
     YoutubeThumbScreen:
     PlaybackScreen:
         id: id_play_scr
@@ -65,7 +66,6 @@ Builder.load_string("""
     PlaylistsScreen:
 
 <StartScreen>:
-    id: id_start_scr
     name: 'start_screen'
     start_scr_spinner: start_scr_spinner
     BoxLayout:
