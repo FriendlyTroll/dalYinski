@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # BUG: handle utf-8 chars in thumbnail screen (e.g. japanese chars not show correctly)
-__version__ = '0.8'
+__version__ = '0.9'
 
 import threading
 import os

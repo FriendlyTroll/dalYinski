@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 
-__version__ = '0.8.1'
+__version__ = '0.9'
 
 import socket
 import time
@@ -331,18 +331,29 @@ window.current_idx -=1; ''')
                elif "getplaylistthumbnails" in self.data:
                    print("getplaylistthumbnails received")
                    try:
+                       # wait for stuff to load
+                       time.sleep(1)
                        # Get document height so that we scroll certain amount of times for the videos to load
                        document_height = self.bro.execute_script('return document.documentElement.scrollHeight')
-                       scroll_amount = int(document_height/2000) + 1
+                       scroll_amount = int(document_height/1000) + 1
                        for _ in range(scroll_amount):
-                               # wait for stuff to load
-                               time.sleep(0.75)
-                               self.bro.execute_script(self.js_scroll_down(2000))
+                               time.sleep(0.8)
+                               self.bro.execute_script(self.js_scroll_down(1000))
 
+                       # BUG: when there's private video, there's no image for it so the thumbnail images after those video don't match description
                        elem_img = self.bro.find_elements_by_xpath('//ytd-thumbnail[@id="thumbnail"][@class="style-scope ytd-playlist-video-renderer"]/a[@id="thumbnail"]/yt-img-shadow/img[@id="img"]')
                        elem_href = self.bro.find_elements_by_xpath('//a[@class="yt-simple-endpoint style-scope ytd-playlist-video-renderer"]')
                        elem_vid_desc = self.bro.find_elements_by_xpath('//div[@id="meta"][@class="style-scope ytd-playlist-video-renderer"]/h3/span[@id="video-title"]')
 
+                       # if one of the lists are empty, try to find new elements (necessary for example when browsing history)
+                       if not(elem_img or elem_href or elem_vid_desc):
+                           elem_img = self.bro.find_elements_by_xpath('//ytd-thumbnail[@class="style-scope ytd-video-renderer"]/a[@id="thumbnail"]/yt-img-shadow/img[@id="img"]')
+                           elem_href = self.bro.find_elements_by_xpath('//a[@id="thumbnail"][@class="yt-simple-endpoint inline-block style-scope ytd-thumbnail"]')
+                           elem_vid_desc = self.bro.find_elements_by_xpath('//div[@id="meta"][@class="style-scope ytd-video-renderer"]/div[@id="title-wrapper"]/h3/a[@id="video-title"]')
+
+                       # print("EL ###", elem_img)
+                       # print("EHREF ###", elem_href)
+                       # print("EVIDDESC ###", elem_vid_desc)
                        self.zip_lists(elem_img, elem_href, plst_vid_desc=elem_vid_desc)
                    except Exception as e:
                        print("getplaylistthumbnails exception: ", type(e), e)
