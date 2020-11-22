@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 # BUG: handle utf-8 chars in thumbnail screen (e.g. japanese chars not show correctly)
-__version__ = '0.9'
+__version__ = '0.9.1'
 
 import threading
 import os
 import time
+from functools import partial
 
 import certifi
 import kivy
@@ -338,11 +339,10 @@ Builder.load_string("""
         padding: (10, 0)
 
 <ScrollableViewYThumbScreen>:
+    id: id_scroll_view_yt_t_scr
     scroll_view_yt_gl: scroll_view_yt_gl
 
     size_hint: 1, 0.92 # adapt to the header that goes above scrollable GridLayout
-
-    on_scroll_stop: root.update_content()
 
     # videos are dynamically added into this grid layout
     GridLayout:
@@ -420,7 +420,6 @@ class YTlbl(Label):
         self.text = labeltext
 
 
-video_thumb_urls = [] # this is a list of tuples
 class ScrollableViewYThumbScreen(ScrollView):
     scroll_view_yt_gl = ObjectProperty()
 
@@ -428,8 +427,6 @@ class ScrollableViewYThumbScreen(ScrollView):
         super().__init__(**kwargs)
         self.size = (Window.width, Window.height)
         self.scroll_view_yt_gl.bind(minimum_height=self.scroll_view_yt_gl.setter('height'))
-        self.chunk_index = 0 # keep track on which chunk in the list we are
-        self.video_thumb_chunk = []
         # If we are coming from playlists screen, send a different command to fetch correct results from server and wait until the youtube playlist page is loaded on server side
         if app.last_screen == "playlists_screen":
             self.pf = show_popup("Fetching videos... \nPlease wait.")
@@ -460,43 +457,23 @@ class ScrollableViewYThumbScreen(ScrollView):
                             dismiss=True)
             p.open()
         else:
-            global video_thumb_urls
             video_thumb_urls = c.recv_thumb_list(self.client_cmd)
-            self.video_thumb_chunk = list(self.divide_chunks(video_thumb_urls, 10)) # a list of lists of videos
-            self.video_urls(self.video_thumb_chunk, chunk_idx=0)
+            self.video_urls(video_thumb_urls)
             self.pf.dismiss()
-            Logger.debug(f"dalYinskiApp: video thumb chunks >> {self.video_thumb_chunk}")
 
     @mainthread
-    def video_urls(self, video_thumb_chunk, chunk_idx=0):
+    def video_urls(self, video_thumb_urls):
         try:
-            vid_sublist = video_thumb_chunk[chunk_idx]
-            Logger.info(f"dalYinskiApp: Chunk index: {self.chunk_index}, of list length {len(video_thumb_chunk)}")
-            for thumb in vid_sublist:
-                # Logger.info(f"dalYinskiApp: DESCRIPTION: {thumb[0]}")
-                # Logger.info(f"dalYinskiApp: IMAGE LINK: {thumb[1]}")
-                # Logger.info(f"dalYinskiApp: VIDEO LINK: {thumb[2]}")
+            for thumb in video_thumb_urls:
+                Logger.debug(f"dalYinskiApp: DESCRIPTION: {thumb[0]}")
+                Logger.debug(f"dalYinskiApp: IMAGE LINK: {thumb[1]}")
+                Logger.debug(f"dalYinskiApp: VIDEO LINK: {thumb[2]}")
                 self.scroll_view_yt_gl.add_widget(YTimg(thumb[1]))
                 self.scroll_view_yt_gl.add_widget(YTlbl(thumb[0]))
                 self.scroll_view_yt_gl.add_widget(YTPlay(thumb[2])) # send video url to constructor
-            self.chunk_index += 1
         except IndexError as e:
             Logger.info(f"dalYinskiApp: {type(e)} {e}")
 
-    def update_content(self):
-        if round(self.scroll_y, 2) < 0:
-            Logger.debug("dalYinskiApp: *** UPDATE CONTENT ***")
-            Logger.debug(f"dalYinskiApp: Chunk idx after {self.chunk_index}")
-            self.video_urls(self.video_thumb_chunk, self.chunk_index)
-
-    def divide_chunks(self, l, n): 
-        '''
-        Yield successive n-sized 
-        chunks from list l. '''
-          
-        # looping till length l 
-        for i in range(0, len(l), n):  
-            yield l[i:i + n] 
     
 class ScrollableViewPlaylists(ScrollView):
     scroll_view_plst = ObjectProperty()
