@@ -351,13 +351,33 @@ window.current_idx -=1; ''')
                            elem_href = self.bro.find_elements_by_xpath('//a[@id="thumbnail"][@class="yt-simple-endpoint inline-block style-scope ytd-thumbnail"]')
                            elem_vid_desc = self.bro.find_elements_by_xpath('//div[@id="meta"][@class="style-scope ytd-video-renderer"]/div[@id="title-wrapper"]/h3/a[@id="video-title"]')
 
+                       self.zip_lists(elem_img, elem_href, plst_vid_desc=elem_vid_desc)
+                   except Exception as e:
+                       print("getplaylistthumbnails exception: ", type(e), e)
+                       self.conn.sendall(b"!! getplaylistthumbnails errored out!")
+               elif "getsubscriptionhumbnails" in self.data:
+                   print("getsubscriptionhumbnails received")
+                   try:
+                       # wait for stuff to load
+                       time.sleep(1)
+                       # Get document height so that we scroll certain amount of times for the videos to load
+                       document_height = self.bro.execute_script('return document.documentElement.scrollHeight')
+                       scroll_amount = int(document_height/1000) + 1
+                       for _ in range(scroll_amount):
+                               time.sleep(0.8)
+                               self.bro.execute_script(self.js_scroll_down(1000))
+
+                       elem_img = self.bro.find_elements_by_xpath('//ytd-thumbnail[@class="style-scope ytd-grid-video-renderer"]/a[@id="thumbnail"]/yt-img-shadow/img[@id="img"]')
+                       elem_href = self.bro.find_elements_by_xpath('//ytd-thumbnail[@class="style-scope ytd-grid-video-renderer"]/a[@id="thumbnail"][@class="yt-simple-endpoint inline-block style-scope ytd-thumbnail"]')
+                       elem_vid_desc = self.bro.find_elements_by_xpath('//div[@id="meta"][@class="style-scope ytd-grid-video-renderer"]/h3/a[@id="video-title"][@class="yt-simple-endpoint style-scope ytd-grid-video-renderer"]')
+
                        # print("EL ###", elem_img)
                        # print("EHREF ###", elem_href)
                        # print("EVIDDESC ###", elem_vid_desc)
                        self.zip_lists(elem_img, elem_href, plst_vid_desc=elem_vid_desc)
                    except Exception as e:
-                       print("getplaylistthumbnails exception: ", type(e), e)
-                       self.conn.sendall(b"!! getplaylistthumbnails errored out!")
+                       print("getsubscriptionhumbnails exception: ", type(e), e)
+                       self.conn.sendall(b"!! getsubscriptionhumbnails errored out!")
                elif "getplaylists" in self.data:
                    print("getplaylists received")
                    try:

@@ -6,7 +6,6 @@ __version__ = '0.9.1'
 import threading
 import os
 import time
-from functools import partial
 
 import certifi
 import kivy
@@ -54,7 +53,10 @@ Builder.load_string("""
     id: id_scrmgr
     StartScreen:
         id: id_start_scr
+        name: 'start_screen'
     YoutubeThumbScreen:
+        id: id_yt_th_scr
+        name: 'youtube_thumb_screen'
     PlaybackScreen:
         id: id_play_scr
         name: 'playback_screen'
@@ -65,9 +67,16 @@ Builder.load_string("""
         id: id_reconn_srv_scr
         name: 'reconnect_srv_screen'
     PlaylistsScreen:
+        id: id_playlists_scr
+        name: 'playlists_screen'
+    WatchLaterScreen:
+        id: id_watchlater_scr
+        name: 'watchlater_screen'
+    SubscriptionsScreen:
+        id: id_subs_scr
+        name: 'subs_screen'
 
 <StartScreen>:
-    name: 'start_screen'
     start_scr_spinner: start_scr_spinner
     BoxLayout:
         orientation: 'vertical'
@@ -107,21 +116,42 @@ Builder.load_string("""
                 text: 'Youtube Home'
                 background_color: (1, 0, 0, 1)
                 on_press: 
+                    app.last_btn_pressed = "ythome"
                     root.manager.current = 'youtube_thumb_screen' 
                     root.manager.transition.direction = 'left'
             Button:
-                text: 'Playback'
+                text: 'Playlists'
+                background_color: (0, 1, 0, 1)
                 on_press: 
-                    root.manager.current = 'playback_screen' 
+                    app.last_btn_pressed = "myplaylists"
+                    root.manager.current = 'playlists_screen' 
+                    root.manager.transition.direction = 'left'
+            Button:
+                text: 'Subscriptions'
+                background_color: (0, 0, 1, 1)
+                on_press: 
+                    root.on_press_subscriptions()
+                    app.last_btn_pressed = "subscriptions"
+                    root.manager.current = 'subs_screen' 
+                    root.manager.transition.direction = 'left'
+            Button:
+                text: 'Watch Later'
+                background_color: (0.5, 0.5, 0, 1)
+                on_press: 
+                    root.on_press_watchlater()
+                    app.last_btn_pressed = "watchlater"
+                    root.manager.current = 'watchlater_screen' 
                     root.manager.transition.direction = 'left'
 
 <YoutubeThumbScreen>:
-    id: id_yt_th_scr
-    name: 'youtube_thumb_screen'
-    on_pre_enter: root.add_scroll_view()
+    on_pre_enter: app.server_is_running()
+    on_enter: root.add_scroll_view()
     on_pre_leave: root.clear_scroll_view()
-    on_enter: root.server_is_running()
 
+<SubscriptionsScreen>:
+    on_pre_enter: app.server_is_running()
+    on_enter: root.add_scroll_view()
+    on_leave: root.clear_scroll_view()
 
 <ConnectServerScreen>:
     press_func: root.on_press_find_server
@@ -141,10 +171,25 @@ Builder.load_string("""
                 root.manager.current = 'start_screen' 
                 root.manager.transition.direction = 'left'
 
+<WatchLaterScreen>:
+    on_pre_enter: app.server_is_running()
+    on_enter: root.add_scroll_view()
+    on_leave: 
+        root.clear_scroll_view()
+        app.last_screen = "watchlater_screen"
+
+
+<PlaylistsScreen>:
+    on_pre_enter: app.server_is_running()
+    on_enter: root.add_scroll_view()
+    on_leave: 
+        root.clear_scroll_view()
+        app.last_screen = "playlists_screen"
+
 <ReconnectServerScreen@ConnectServerScreen>:
 
 <PlaybackScreen>:
-    on_enter: root.server_is_running()
+    on_pre_enter: app.server_is_running()
     
     btn_play_pause: btn_play_pause
 
@@ -251,15 +296,6 @@ Builder.load_string("""
                 text: 'Fullscreen'
                 pos_hint: {'center_x': .5, 'center_y': .5}
                 on_press: root.on_press_fullscreen()
-            
-
-<PlaylistsScreen>:
-    id: id_playlists_scr
-    name: 'playlists_screen'
-    on_enter: root.add_scroll_view()
-    on_leave: 
-        root.clear_scroll_view()
-        app.last_screen = "playlists_screen"
 
 <Banner>: # Label class
     size_hint: (0.6, 1.0)
@@ -283,7 +319,6 @@ Builder.load_string("""
     Button:
         size_hint: (0.2, 1.0)
         on_release: 
-            root.on_press_go_home()
             app.last_screen = "start_screen"
             app.root.current = 'start_screen'
             app.root.transition.direction = 'right'
@@ -309,21 +344,32 @@ Builder.load_string("""
         on_release:
             app.root.current = 'playlists_screen'
             app.root.transition.direction = 'left'
-    #Spinner:
-    #    id: id_playlist_spinner
-    #    text: "Playlists"
-    #    size_hint: (0.2, 1.0)
-    #    values: ("Trending", "Subscriptions", "Library", "History")
-    #    on_text: 
-    #        if id_playlist_spinner.text == "Subscriptions": root.go_subscriptions(); id_playlist_spinner.text = "Playlists"
-    #        else: pass
     
 
 <ThumbScreenHeader@Header>:
-    text: 'YouTube Home'
+    text: 'YouTube'
 
 <PlaylistsHeader@Header>:
-    text: 'Your playlists'
+    text: 'Playlists'
+
+<SubscriptionsHeader@Header>:
+    text: 'Subscriptions'
+
+<WatchLaterHeader@Header>:
+    text: 'Watch Later'
+
+<ScrollableViewWatchLater>:
+    scroll_view_wl: scroll_view_wl
+
+    size_hint: 1, 0.92 # adapt to the header that goes above scrollable GridLayout
+
+    GridLayout:
+        id: scroll_view_plst
+        row_default_height: 100
+        cols: 1
+        spacing: 1
+        size_hint_y: None
+        padding: (10, 0)
 
 <ScrollableViewPlaylists>:
     scroll_view_plst: scroll_view_plst
@@ -393,18 +439,20 @@ class Header(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def go_subscriptions(self):
-        c = DalyinskiClient()
-        c.command(b'subscriptions')
-
-    def on_press_go_home(self):
-        PlaybackScreen().on_press_go_home()
 
 class ThumbScreenHeader(Header):
     pass
 
 
 class PlaylistsHeader(Header):
+    pass
+
+
+class SubscriptionsHeader(Header):
+    pass
+
+
+class WatchLaterHeader(Header):
     pass
 
 
@@ -419,7 +467,9 @@ class YTlbl(Label):
         super().__init__(**kwargs)
         self.text = labeltext
 
-
+#########################
+#  Scrollable views     #
+#########################
 class ScrollableViewYThumbScreen(ScrollView):
     scroll_view_yt_gl = ObjectProperty()
 
@@ -428,38 +478,40 @@ class ScrollableViewYThumbScreen(ScrollView):
         self.size = (Window.width, Window.height)
         self.scroll_view_yt_gl.bind(minimum_height=self.scroll_view_yt_gl.setter('height'))
         # If we are coming from playlists screen, send a different command to fetch correct results from server and wait until the youtube playlist page is loaded on server side
-        if app.last_screen == "playlists_screen":
+        if app.last_screen == "playlists_screen" or app.last_btn_pressed == "watchlater":
             self.pf = show_popup("Fetching videos... \nPlease wait.")
             self.pf.open()
             time.sleep(1)
             self.client_cmd = b'getplaylistthumbnails'
-        elif app.last_screen == "start_screen":
+        elif app.last_screen == "start_screen" and app.last_btn_pressed == "ythome":
+            PlaybackScreen().on_press_go_home() # make sure we are on YT home screen
             self.pf = show_popup("Fetching videos... \nPlease wait.")
             self.pf.open()
             c = DalyinskiClient()
             self.client_cmd = client_cmd
+        elif app.last_screen == "start_screen" and app.last_btn_pressed == "subscriptions":
+            self.pf = show_popup("Fetching videos... \nPlease wait.")
+            self.pf.open()
+            time.sleep(1)
+            c = DalyinskiClient()
+            self.client_cmd = b'getsubscriptionhumbnails'
         self.get_thumbnails()
 
-    def get_thumbnails(self, chunk_idx=0):
+    def get_thumbnails(self):
         ''' We can't do any UI updates from a separate thread.
         That's why we are calling a separate function (video_urls()) from
         the threaded function (_get_thumbnails()) and scheduling
         it on the main thread via @mainthread decorator from kivy.clock 
         module '''
-        t = threading.Thread(target=self._get_thumbnails, args=(chunk_idx,), daemon=True)
+        t = threading.Thread(target=self._get_thumbnails, args=(), daemon=True)
         t.start()
 
-    def _get_thumbnails(self, chunk_idx=0):
+    def _get_thumbnails(self):
         c = DalyinskiClient()
         # TODO: maybe use a decorator for checking if the server is up, so that it can be reused
-        if not c.SERVER_RUNNING:
-            p = show_popup("It looks like the server is not running.\nPlease open it.",
-                            dismiss=True)
-            p.open()
-        else:
-            video_thumb_urls = c.recv_thumb_list(self.client_cmd)
-            self.video_urls(video_thumb_urls)
-            self.pf.dismiss()
+        video_thumb_urls = c.recv_thumb_list(self.client_cmd)
+        self.video_urls(video_thumb_urls)
+        self.pf.dismiss()
 
     @mainthread
     def video_urls(self, video_thumb_urls):
@@ -491,18 +543,13 @@ class ScrollableViewPlaylists(ScrollView):
     def _get_playlists(self):
         c = DalyinskiClient()
 
-        if not c.SERVER_RUNNING:
-            p = show_popup("It looks like the server is not running.\nPlease open it.",
-                            dismiss=True)
-            p.open()
-        else:
-            p = show_popup("Fetching playlists... \nPlease wait.")
-            p.open()
-            usr_playlists = c.recv_playlists(b'getplaylists') # a list of tuples of playlist name and link
-            Logger.debug(f"dalYinskiApp: Got list of playlists: {usr_playlists}")
-            for plst in usr_playlists:
-                self.scroll_view_plst.add_widget(PlstBtn(str(plst[1]), text=str(plst[0]))) # plst[1] is playlist link (sent to the constructor in order to open it), plst[0] is playlist name
-            p.dismiss()
+        p = show_popup("Fetching playlists... \nPlease wait.")
+        p.open()
+        usr_playlists = c.recv_playlists(b'getplaylists') # a list of tuples of playlist name and link
+        Logger.debug(f"dalYinskiApp: Got list of playlists: {usr_playlists}")
+        for plst in usr_playlists:
+            self.scroll_view_plst.add_widget(PlstBtn(str(plst[1]), text=str(plst[0]))) # plst[1] is playlist link (sent to the constructor in order to open it), plst[0] is playlist name
+        p.dismiss()
 
 
 #########################
@@ -512,14 +559,6 @@ class YTPlay(Button):
     def __init__(self, vidurl, **kwargs):
         super().__init__(**kwargs)
         self.vidurl = vidurl
-
-    # def on_parent(self, obj, parent):
-        ''' Once this button widget gets a parent set its height
-        relative to parents. We can't do this in kv language
-        because this button is dynamically added.
-        '''
-        # self.height = self.parent.height * 2
-        # self.height = 100
 
     def play_video(self):
         t = threading.Thread(target=self._play_video, daemon=True)
@@ -598,6 +637,11 @@ class StartScreen(Screen):
         # Logger.info(f"dalYinskiApp: {self.parent.ids}")
         self.parent.ids.id_start_scr.start_scr_spinner.text = 'Menu'
 
+    def on_press_open_browser(self):
+        ''' Threading function to call the "real" function '''
+        t = threading.Thread(target=self._on_press_open_browser, args=())
+        t.start()
+
     def _on_press_open_browser(self):
         ''' Private function to call with threading, to prevent gui blocking '''
         p = show_popup("Opening web browser...\nPlease wait.")
@@ -606,13 +650,22 @@ class StartScreen(Screen):
         c.command(b'fbro')
         p.dismiss()
 
-    def on_press_open_browser(self):
-        ''' Threading function to call the "real" function '''
-        t = threading.Thread(target=self._on_press_open_browser, args=())
+    def on_press_subscriptions(self):
+        t = threading.Thread(target=self._on_press_subscriptions, args=())
         t.start()
 
-class ConnectServerScreen(Screen):
+    def _on_press_subscriptions(self):
+        PlaybackScreen().on_press_subscriptions()
 
+    def on_press_watchlater(self):
+        t = threading.Thread(target=self._on_press_watchlater, args=())
+        t.start()
+
+    def _on_press_watchlater(self):
+        PlaybackScreen().on_press_watch_later()
+
+
+class ConnectServerScreen(Screen):
     def _on_press_find_server(self):
         ''' If the server changed its IP, reset the IP
         in config file, so the client.py can run the redisovery
@@ -650,43 +703,38 @@ class YoutubeThumbScreen(Screen):
     def clear_scroll_view(self):
         self.clear_widgets()
 
-    def server_is_running(self):
-        c = DalyinskiClient()
-        # if the server isn't running switch back to start screen
-        if not c.SERVER_RUNNING:
-            p = show_popup("It looks like the server is not running.\nPlease open it.",
-                            dismiss=True)
-            p.open()
-            self.manager.current = 'start_screen'
-        else:
-            pass
-
 class PlaylistsScreen(Screen):
     def add_scroll_view(self):
         self.add_widget(ScrollableViewPlaylists())
         self.add_widget(PlaylistsHeader())
-        Logger.info(f"dalYinskiApp: Current screen: PlaylistsScreen; Last screen was: {app.last_screen}")
+        Logger.info(f"dalYinskiApp: Current screen: playlists_screen; Last screen was: {app.last_screen}")
         app.last_screen = "playlists_screen"
+
+    def clear_scroll_view(self):
+        self.clear_widgets()
+
+class WatchLaterScreen(Screen):
+    def add_scroll_view(self):
+        self.add_widget(ScrollableViewYThumbScreen())
+        self.add_widget(WatchLaterHeader())
+        Logger.info(f"dalYinskiApp: Current screen: watchlater_screen; Last screen was: {app.last_screen}")
+        app.last_screen = "watchlater_screen"
+
+    def clear_scroll_view(self):
+        self.clear_widgets()
+
+class SubscriptionsScreen(Screen):
+    def add_scroll_view(self):
+        self.add_widget(ScrollableViewYThumbScreen())
+        self.add_widget(SubscriptionsHeader())
+        Logger.info(f"dalYinskiApp: Current screen: subs_screen; Last screen was: {app.last_screen}")
+        app.last_screen = "subs_screen"
 
     def clear_scroll_view(self):
         self.clear_widgets()
 
 class PlaybackScreen(Screen):
     btn_play_pause = ObjectProperty()
-
-    def server_is_running(self):
-        c = DalyinskiClient()
-        # if the server isn't running switch back to start screen
-        if not c.SERVER_RUNNING:
-            p = show_popup("It looks like the server is not running.\nPlease open it.",
-                            dismiss=True)
-            p.open()
-            self.manager.current = 'start_screen'
-        else:
-            pass
-
-    # TODO: maybe use a singleton instead of instantiating new class in every call
-    # https://stackoverflow.com/questions/31875/is-there-a-simple-elegant-way-to-define-singletons
 
     def on_press_play_previous(self):
         # TODO: this is buggy, rework it
@@ -704,16 +752,10 @@ class PlaybackScreen(Screen):
         elif isPaused:
             self.btn_play_pause.source = './img/baseline_pause_circle_filled_black_48.png'
             isPaused = False
-        # print('PreviousNext ==>',isPaused)
 
     def on_press_play_pause(self):
         c = DalyinskiClient()
-        if not c.SERVER_RUNNING:
-            p = show_popup("It looks like the browser is not running.\nPlease open it.",
-                            dismiss=True)
-            p.open()
-        else:
-            c.command(b'playpause')
+        c.command(b'playpause')
        
     def on_press_play_next(self):
         global isPaused
@@ -726,7 +768,6 @@ class PlaybackScreen(Screen):
         elif isPaused:
             self.btn_play_pause.source = './img/baseline_pause_circle_filled_black_48.png'
             isPaused = False
-        # print('PreviousNext ==>',isPaused)
 
     def on_press_watch_later(self):
         c = DalyinskiClient()
@@ -787,16 +828,28 @@ class DalyinskiScrMgr(ScreenManager):
 class MainApp(App):
     title = "DalYinski"
     last_screen = None
+    last_btn_pressed = None
 
     def build(self):
-        screen_mgr = DalyinskiScrMgr()
+        self.screen_mgr = DalyinskiScrMgr()
         # if we don't have a server ip stored in the config show connection screen
         if have_ip:
-            screen_mgr.current = 'start_screen'
+            self.screen_mgr.current = 'start_screen'
         else:
-            screen_mgr.current = 'connect_srv_screen'
-        return screen_mgr
+            self.screen_mgr.current = 'connect_srv_screen'
+        return self.screen_mgr
       
+    def server_is_running(self):
+        c = DalyinskiClient()
+        # if the server isn't running switch back to start screen
+        if not c.SERVER_RUNNING:
+            p = show_popup("It looks like the server is not running.\nPlease open it.",
+                            dismiss=True)
+            p.open()
+            self.screen_mgr.current = 'start_screen'
+        else:
+            pass
+
 if __name__ == '__main__':
     app = MainApp()
     app.run()
