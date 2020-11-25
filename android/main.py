@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# BUG: handle utf-8 chars in thumbnail screen (e.g. japanese chars not show correctly)
 __version__ = '0.9.1'
 
 import threading
@@ -75,6 +74,11 @@ Builder.load_string("""
     SubscriptionsScreen:
         id: id_subs_scr
         name: 'subs_screen'
+
+<DropDown>:
+    # Specify custom button width in Spinner below
+    auto_width: False
+    width: 400
 
 <StartScreen>:
     start_scr_spinner: start_scr_spinner
