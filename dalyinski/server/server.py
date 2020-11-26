@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 
-__version__ = '0.9'
+__version__ = '0.10'
 
 import socket
 import time
@@ -187,8 +187,8 @@ thumbnailList[window.current_idx - 1].click();
                    try:
                        self.bro.find_element_by_class_name("ytp-fullscreen-button.ytp-button").click()
                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
-                       # mini player is opened, fullscreen it
                        try:
+                           # mini player is opened, fullscreen it
                            self.bro.find_element_by_class_name("ytp-miniplayer-expand-watch-page-button.ytp-button.ytp-miniplayer-button-top-left").click()
                        # no element at all
                        except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
@@ -383,15 +383,15 @@ window.current_idx -=1; ''')
                    try:
                        try:
                            # expand "Show more" first
-                           self.bro.find_element_by_xpath('//a[@title="Show more"]').click()
+                           self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
                        except exceptions.ElementNotInteractableException as e:
                            print("Show more exception: ", type(e), e)
                        except exceptions.NoSuchElementException as e:
                            print("Show more exception: ", type(e), e)
                            # Open hamburger menu and locate the element
-                           self.bro.find_element_by_xpath("//button[@id='button'][@aria-label='Guide']").click() # hamburger element
+                           self.bro.find_element_by_xpath('//yt-icon[@id="guide-icon"][@class="style-scope ytd-masthead"][@icon="yt-icons:menu"]').click() # hamburger element
                            time.sleep(1) # wait a bit
-                           self.bro.find_element_by_xpath('//a[@title="Show more"]').click()
+                           self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
 
                        # Your videos, Your movies and Watch later elements
                        vid_mv_wl = self.bro.find_elements_by_xpath('//div[@id="section-items"]/ytd-guide-entry-renderer/a[@id="endpoint"][@class="yt-simple-endpoint style-scope ytd-guide-entry-renderer"]')
@@ -430,7 +430,7 @@ window.current_idx -=1; ''')
                elif "subscriptions" in self.data:
                    print("subscriptions received")
                    try:
-                      self.bro.find_element_by_xpath("//a[@id='endpoint'][@title='Subscriptions']/paper-item/yt-icon").click()
+                      self.bro.find_element_by_xpath("//a[@id='endpoint'][@href='/feed/subscriptions']/paper-item/yt-icon").click()
                    except Exception as e:
                        print("subscriptions EXCEPTION: ", e)
                elif not self.data:

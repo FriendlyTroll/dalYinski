@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.9.1'
+__version__ = '0.10.0'
 
 import threading
 import os
@@ -127,7 +127,7 @@ Builder.load_string("""
                 text: 'Playlists'
                 background_color: (0, 1, 0, 1)
                 on_press: 
-                    app.last_btn_pressed = "myplaylists"
+                    app.last_btn_pressed = "playlists"
                     root.manager.current = 'playlists_screen' 
                     root.manager.transition.direction = 'left'
             Button:
@@ -346,6 +346,7 @@ Builder.load_string("""
         text: "Playlists"
         size_hint: (0.2, 1.0)
         on_release:
+            app.last_btn_pressed = "playlists"
             app.root.current = 'playlists_screen'
             app.root.transition.direction = 'left'
     
@@ -460,6 +461,7 @@ class WatchLaterHeader(Header):
     pass
 
 
+# TODO: Handle OSError: [Errno 101] Network is unreachable when fetching image
 class YTimg(AsyncImage):
     def __init__(self, imgsrc, **kwargs):
         super().__init__(**kwargs)
@@ -481,18 +483,19 @@ class ScrollableViewYThumbScreen(ScrollView):
         super().__init__(**kwargs)
         self.size = (Window.width, Window.height)
         self.scroll_view_yt_gl.bind(minimum_height=self.scroll_view_yt_gl.setter('height'))
-        # If we are coming from playlists screen, send a different command to fetch correct results from server and wait until the youtube playlist page is loaded on server side
-        if app.last_screen == "playlists_screen" or app.last_btn_pressed == "watchlater":
-            self.pf = show_popup("Fetching videos... \nPlease wait.")
-            self.pf.open()
-            time.sleep(1)
-            self.client_cmd = b'getplaylistthumbnails'
-        elif app.last_screen == "start_screen" and app.last_btn_pressed == "ythome":
+        # Send different command to server depending on which button was pressed
+        if app.last_btn_pressed == "ythome":
             PlaybackScreen().on_press_go_home() # make sure we are on YT home screen
+            time.sleep(1) # wait a bit for the page to load
             self.pf = show_popup("Fetching videos... \nPlease wait.")
             self.pf.open()
             c = DalyinskiClient()
             self.client_cmd = client_cmd
+        elif app.last_screen == "playlists_screen" or app.last_btn_pressed == "watchlater" or app.last_btn_pressed == "playlists":
+            self.pf = show_popup("Fetching videos... \nPlease wait.")
+            self.pf.open()
+            time.sleep(1)
+            self.client_cmd = b'getplaylistthumbnails'
         elif app.last_screen == "start_screen" and app.last_btn_pressed == "subscriptions":
             self.pf = show_popup("Fetching videos... \nPlease wait.")
             self.pf.open()
