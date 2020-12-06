@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.10.0'
+__version__ = '0.11.1'
 
 import threading
 import os
@@ -21,13 +21,14 @@ from kivy.uix.widget import Widget
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, DictProperty, ListProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView 
 from kivy.core.window import Window
 from kivy.uix.spinner import Spinner
 from kivy.logger import Logger
 from kivy.storage.jsonstore import JsonStore
+from kivy.uix.recycleview import RecycleView
 
 # local imports
 from client import DalyinskiClient
@@ -74,6 +75,10 @@ Builder.load_string("""
     SubscriptionsScreen:
         id: id_subs_scr
         name: 'subs_screen'
+
+# workaround for cache bug https://github.com/kivy/kivy/issues/6103
+<AsyncImage>:
+    nocache: True
 
 <DropDown>:
     # Specify custom button width in Spinner below
@@ -134,7 +139,6 @@ Builder.load_string("""
                 text: 'Subscriptions'
                 background_color: (0, 0, 1, 1)
                 on_press: 
-                    root.on_press_subscriptions()
                     app.last_btn_pressed = "subscriptions"
                     root.manager.current = 'subs_screen' 
                     root.manager.transition.direction = 'left'
@@ -142,7 +146,6 @@ Builder.load_string("""
                 text: 'Watch Later'
                 background_color: (0.5, 0.5, 0, 1)
                 on_press: 
-                    root.on_press_watchlater()
                     app.last_btn_pressed = "watchlater"
                     root.manager.current = 'watchlater_screen' 
                     root.manager.transition.direction = 'left'
@@ -150,7 +153,7 @@ Builder.load_string("""
 <YoutubeThumbScreen>:
     on_pre_enter: app.server_is_running()
     on_enter: root.add_scroll_view()
-    on_pre_leave: root.clear_scroll_view()
+    on_leave: root.clear_scroll_view()
 
 <SubscriptionsScreen>:
     on_pre_enter: app.server_is_running()
@@ -180,7 +183,6 @@ Builder.load_string("""
     on_enter: root.add_scroll_view()
     on_leave: 
         root.clear_scroll_view()
-        app.last_screen = "watchlater_screen"
 
 
 <PlaylistsScreen>:
@@ -369,7 +371,7 @@ Builder.load_string("""
     size_hint: 1, 0.92 # adapt to the header that goes above scrollable GridLayout
 
     GridLayout:
-        id: scroll_view_plst
+        # id: scroll_view_plst
         row_default_height: 100
         cols: 1
         spacing: 1
@@ -391,32 +393,46 @@ Builder.load_string("""
 
 <ScrollableViewYThumbScreen>:
     id: id_scroll_view_yt_t_scr
-    scroll_view_yt_gl: scroll_view_yt_gl
 
     size_hint: 1, 0.92 # adapt to the header that goes above scrollable GridLayout
 
-    # videos are dynamically added into this grid layout
-    GridLayout:
-        id: scroll_view_yt_gl
-        row_default_height: 300
-        cols: 3
-        spacing: 1
-        size_hint_y: None
+    RecycleView:
+        id: id_rv
+        data: root.video_list # a list of dictionaries which get passed to VideoItem
+        viewclass: 'VideoItem'
+        RecycleBoxLayout:
+            default_size_hint: 1, None
+            size_hint_y: None
+            height: self.minimum_height
+            orientation: 'vertical'
+            padding: [0, 10]
 
-# These 3 widgets are dynamically added to GridLayout under ScrollableViewYThumbScreen above
-<YTimg>:
 
-<YTlbl>:
-    text_size: self.size
-    valign: 'center'
-    padding_x: '6sp'
-    height: self.texture_size[1]
-    max_lines: 3
+<VideoItem>: # BoxLayout
+    id: id_video_item
+    # values below are placeholders which get replaced by the data from RecycleView above
+    image_link: "link"
+    image_desc: "text"
+    video_link: "link"
+
+    orientation: 'horizontal'
+    AsyncImage:
+        source: root.image_link
+    Label:
+        text: root.image_desc
+        text_size: self.size
+        font_size: '10sp'
+        valign: 'center'
+        # padding_x: '6sp'
+        height: self.texture_size[1]
+        max_lines: 3
+    YTPlay:
+        on_release: 
+            self.play_video(root.video_link)
 
 <YTPlay>:
     text: "Play"
     on_release: 
-        root.play_video()
         app.root.current = 'playback_screen'
         app.root.transition.direction = 'right'
 
@@ -461,46 +477,41 @@ class WatchLaterHeader(Header):
     pass
 
 
-# TODO: Handle OSError: [Errno 101] Network is unreachable when fetching image
-class YTimg(AsyncImage):
-    def __init__(self, imgsrc, **kwargs):
-        super().__init__(**kwargs)
-        self.source = imgsrc
-        
+class VideoItem(BoxLayout):
+    pass
 
-class YTlbl(Label):
-    def __init__(self, labeltext, **kwargs):
-        super().__init__(**kwargs)
-        self.text = labeltext
 
 #########################
 #  Scrollable views     #
 #########################
 class ScrollableViewYThumbScreen(ScrollView):
-    scroll_view_yt_gl = ObjectProperty()
+    video_list = ListProperty()
 
     def __init__(self, client_cmd=b'getthumbnails', **kwargs):
         super().__init__(**kwargs)
-        self.size = (Window.width, Window.height)
-        self.scroll_view_yt_gl.bind(minimum_height=self.scroll_view_yt_gl.setter('height'))
         # Send different command to server depending on which button was pressed
         if app.last_btn_pressed == "ythome":
-            PlaybackScreen().on_press_go_home() # make sure we are on YT home screen
-            time.sleep(1) # wait a bit for the page to load
             self.pf = show_popup("Fetching videos... \nPlease wait.")
+            PlaybackScreen().on_press_go_home()
+            time.sleep(1) # wait a bit for the page to load
             self.pf.open()
-            c = DalyinskiClient()
             self.client_cmd = client_cmd
-        elif app.last_screen == "playlists_screen" or app.last_btn_pressed == "watchlater" or app.last_btn_pressed == "playlists":
+        elif app.last_btn_pressed == "watchlater":
+            self.pf = show_popup("Fetching videos... \nPlease wait.")
+            PlaybackScreen().on_press_watch_later()
+            self.pf.open()
+            time.sleep(1)
+            self.client_cmd = b'getplaylistthumbnails'
+        elif app.last_screen == "playlists_screen" or app.last_btn_pressed == "playlists":
             self.pf = show_popup("Fetching videos... \nPlease wait.")
             self.pf.open()
             time.sleep(1)
             self.client_cmd = b'getplaylistthumbnails'
         elif app.last_screen == "start_screen" and app.last_btn_pressed == "subscriptions":
             self.pf = show_popup("Fetching videos... \nPlease wait.")
+            PlaybackScreen().on_press_subscriptions()
             self.pf.open()
             time.sleep(1)
-            c = DalyinskiClient()
             self.client_cmd = b'getsubscriptionhumbnails'
         self.get_thumbnails()
 
@@ -510,8 +521,8 @@ class ScrollableViewYThumbScreen(ScrollView):
         the threaded function (_get_thumbnails()) and scheduling
         it on the main thread via @mainthread decorator from kivy.clock 
         module '''
-        t = threading.Thread(target=self._get_thumbnails, args=(), daemon=True)
-        t.start()
+        self.t = threading.Thread(target=self._get_thumbnails, args=(), daemon=True)
+        self.t.start()
 
     def _get_thumbnails(self):
         c = DalyinskiClient()
@@ -520,16 +531,18 @@ class ScrollableViewYThumbScreen(ScrollView):
         self.video_urls(video_thumb_urls)
         self.pf.dismiss()
 
-    @mainthread
+    # @mainthread
     def video_urls(self, video_thumb_urls):
         try:
             for thumb in video_thumb_urls:
+                loop_video_data_dict = dict()
                 Logger.debug(f"dalYinskiApp: DESCRIPTION: {thumb[0]}")
                 Logger.debug(f"dalYinskiApp: IMAGE LINK: {thumb[1]}")
                 Logger.debug(f"dalYinskiApp: VIDEO LINK: {thumb[2]}")
-                self.scroll_view_yt_gl.add_widget(YTimg(thumb[1]))
-                self.scroll_view_yt_gl.add_widget(YTlbl(thumb[0]))
-                self.scroll_view_yt_gl.add_widget(YTPlay(thumb[2])) # send video url to constructor
+                loop_video_data_dict["image_link"] = thumb[1]
+                loop_video_data_dict["image_desc"] = thumb[0]
+                loop_video_data_dict["video_link"] = thumb[2]
+                self.video_list.append(loop_video_data_dict)
         except IndexError as e:
             Logger.info(f"dalYinskiApp: {type(e)} {e}")
 
@@ -559,24 +572,27 @@ class ScrollableViewPlaylists(ScrollView):
         p.dismiss()
 
 
+class ScrollableViewWatchLater(ScrollView):
+    pass
+
 #########################
 # Custom button classes #
 #########################
 class YTPlay(Button):
-    def __init__(self, vidurl, **kwargs):
+    def __init__(self, vidurl=None, **kwargs):
         super().__init__(**kwargs)
         self.vidurl = vidurl
 
-    def play_video(self):
-        t = threading.Thread(target=self._play_video, daemon=True)
+    def play_video(self, vidurl):
+        t = threading.Thread(target=self._play_video, args=(vidurl, ), daemon=True)
         t.start()
 
-    def _play_video(self):
+    def _play_video(self, vidurl):
         ''' Send playvideo command + video url from the video_thumb_urls list
         which gets passed in the constructor above as vidurl variable
         so that the server can start video. '''
         c = DalyinskiClient()
-        c.command(b'playvideo' + b' ' + bytes(self.vidurl, 'utf-8'))
+        c.command(b'playvideo' + b' ' + bytes(vidurl, 'utf-8'))
 
 
 class ImageButton(ButtonBehavior, Image):
@@ -641,7 +657,7 @@ class StartScreen(Screen):
         size_hint=(0.8, 0.8), size=(600, 400),
         auto_dismiss=True)
         popup.open()
-        # Logger.info(f"dalYinskiApp: {self.parent.ids}")
+        Logger.debug(f"dalYinskiApp: {self.parent.ids}")
         self.parent.ids.id_start_scr.start_scr_spinner.text = 'Menu'
 
     def on_press_open_browser(self):
@@ -656,20 +672,6 @@ class StartScreen(Screen):
         c = DalyinskiClient()
         c.command(b'fbro')
         p.dismiss()
-
-    def on_press_subscriptions(self):
-        t = threading.Thread(target=self._on_press_subscriptions, args=())
-        t.start()
-
-    def _on_press_subscriptions(self):
-        PlaybackScreen().on_press_subscriptions()
-
-    def on_press_watchlater(self):
-        t = threading.Thread(target=self._on_press_watchlater, args=())
-        t.start()
-
-    def _on_press_watchlater(self):
-        PlaybackScreen().on_press_watch_later()
 
 
 class ConnectServerScreen(Screen):
@@ -698,10 +700,6 @@ class ReconnectServerScreen(Screen):
 
 class YoutubeThumbScreen(Screen):
     def add_scroll_view(self):
-        t = threading.Thread(target=self._add_scroll_view, args=())
-        t.start()
-
-    def _add_scroll_view(self):
         self.add_widget(ScrollableViewYThumbScreen())
         self.add_widget(ThumbScreenHeader())
         Logger.info(f"dalYinskiApp: Current screen: youtube_thumb_screen; Last screen was: {app.last_screen}")
