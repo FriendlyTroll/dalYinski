@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.11.1'
+__version__ = '0.12'
 
 import threading
 import os
@@ -19,9 +19,8 @@ from kivy.graphics import Rectangle
 from kivy.uix.image import Image, AsyncImage
 from kivy.uix.widget import Widget
 from kivy.uix.behaviors import ButtonBehavior
-from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty, DictProperty, ListProperty
+from kivy.properties import ObjectProperty, ListProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView 
 from kivy.core.window import Window
@@ -114,6 +113,13 @@ Builder.load_string("""
                     Rectangle:
                         pos: self.pos
                         size: self.size
+            Button:
+                text: "Playback"
+                size_hint: (0.2, 1.0)
+                on_release:
+                    app.last_btn_pressed = "playback"
+                    app.root.current = 'playback_screen'
+                    app.root.transition.direction = 'left'
                 
         BoxLayout:
             ######################
@@ -203,7 +209,7 @@ Builder.load_string("""
         id: id_bl_in_playback_scr
         orientation: 'vertical'
         Header:
-            text: "Play controls"
+            text: "Playback"
         BoxLayout:
             ######################
             # Main content area ##
@@ -345,25 +351,25 @@ Builder.load_string("""
     Banner:
         text: root.text
     Button:
-        text: "Playlists"
+        text: "Playback"
         size_hint: (0.2, 1.0)
         on_release:
-            app.last_btn_pressed = "playlists"
-            app.root.current = 'playlists_screen'
+            app.last_btn_pressed = "playback"
+            app.root.current = 'playback_screen'
             app.root.transition.direction = 'left'
     
 
 <ThumbScreenHeader@Header>:
-    text: 'YouTube'
+    text: "Videos"
 
 <PlaylistsHeader@Header>:
-    text: 'Playlists'
+    text: "Playlists"
 
 <SubscriptionsHeader@Header>:
-    text: 'Subscriptions'
+    text: "Subscriptions"
 
 <WatchLaterHeader@Header>:
-    text: 'Watch Later'
+    text: "Watch Later"
 
 <ScrollableViewWatchLater>:
     scroll_view_wl: scroll_view_wl
@@ -516,11 +522,6 @@ class ScrollableViewYThumbScreen(ScrollView):
         self.get_thumbnails()
 
     def get_thumbnails(self):
-        ''' We can't do any UI updates from a separate thread.
-        That's why we are calling a separate function (video_urls()) from
-        the threaded function (_get_thumbnails()) and scheduling
-        it on the main thread via @mainthread decorator from kivy.clock 
-        module '''
         self.t = threading.Thread(target=self._get_thumbnails, args=(), daemon=True)
         self.t.start()
 
@@ -531,7 +532,6 @@ class ScrollableViewYThumbScreen(ScrollView):
         self.video_urls(video_thumb_urls)
         self.pf.dismiss()
 
-    # @mainthread
     def video_urls(self, video_thumb_urls):
         try:
             for thumb in video_thumb_urls:
