@@ -408,31 +408,38 @@ Builder.load_string("""
         viewclass: 'VideoItem'
         RecycleBoxLayout:
             default_size_hint: 1, None
+            default_size: None, 1
             size_hint_y: None
             height: self.minimum_height
             orientation: 'vertical'
             padding: [0, 10]
 
 
-<VideoItem>: # BoxLayout
+<VideoItem>: # GridLayout
     id: id_video_item
     # values below are placeholders which get replaced by the data from RecycleView above
     image_link: "link"
     image_desc: "text"
     video_link: "link"
-
-    orientation: 'horizontal'
+    child_height: 250
+    
+    cols: 3
+    height: self.minimum_height
     AsyncImage:
         source: root.image_link
+        height: root.child_height
+        size_hint_y: None
     Label:
         text: root.image_desc
         text_size: self.size
         font_size: '10sp'
         valign: 'center'
-        # padding_x: '6sp'
-        height: self.texture_size[1]
+        height: root.child_height
+        size_hint_y: None
         max_lines: 3
     YTPlay:
+        height: root.child_height
+        size_hint_y: None
         on_release: 
             self.play_video(root.video_link)
 
@@ -483,7 +490,7 @@ class WatchLaterHeader(Header):
     pass
 
 
-class VideoItem(BoxLayout):
+class VideoItem(GridLayout):
     pass
 
 
