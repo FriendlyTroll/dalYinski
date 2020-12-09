@@ -66,6 +66,6 @@ fi
 
 if [[ -d ${APP_DIR}/usr/lib/python3/dist-packages/dalyinski ]]
 then
-    sudo rm -rf ${APP_DIR}/usr/lib/python3/dist-packages/dalyinski
+    rm -rf ${APP_DIR}/usr/lib/python3/dist-packages/dalyinski
 fi
 rm -rf ${APP_DIR}
