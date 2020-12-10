@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
-__version__ = '0.12'
+__version__ = '0.13'
 
 import threading
 import os
 import time
 
-import certifi
 import kivy
-kivy.require('1.11.1')
+kivy.require('2.0.0')
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.label import Label
@@ -38,10 +37,6 @@ if store.exists('connection'):
     have_ip = store.get('connection')['ip']
 else:
     have_ip = None
-
-# Fix for when android is not loading the https urls (should be fixed in next kivy release)
-# https://github.com/kivy/python-for-android/issues/1827
-os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # variables for correct display of either play or pause button
 isPaused = True
@@ -75,9 +70,6 @@ Builder.load_string("""
         id: id_subs_scr
         name: 'subs_screen'
 
-# workaround for cache bug https://github.com/kivy/kivy/issues/6103
-<AsyncImage>:
-    nocache: True
 
 <DropDown>:
     # Specify custom button width in Spinner below
