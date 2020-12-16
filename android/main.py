@@ -288,6 +288,8 @@ Builder.load_string("""
     Button:
         size_hint: (0.2, 1.0)
         on_release: 
+            if app.in_fullscreen: app.root.ids.id_play_scr.on_press_fullscreen()
+            else: pass
             app.last_screen = "start_screen"
             app.root.current = 'start_screen'
             app.root.transition.direction = 'right'
@@ -463,8 +465,8 @@ class ScrollableViewYThumbScreen(ScrollView):
         if app.last_btn_pressed == "ythome":
             self.pf = show_popup("Fetching videos... \nPlease wait.")
             PlaybackScreen().on_press_go_home()
-            time.sleep(1) # wait a bit for the page to load
             self.pf.open()
+            time.sleep(1) # wait a bit for the page to load
             self.client_cmd = client_cmd
         elif app.last_btn_pressed == "watchlater":
             self.pf = show_popup("Fetching videos... \nPlease wait.")
@@ -749,6 +751,10 @@ class PlaybackScreen(Screen):
     def on_press_fullscreen(self):
         c = DalyinskiClient()
         c.command(b'fullscreen')
+        if not app.in_fullscreen:
+            app.in_fullscreen = True
+        else:
+            app.in_fullscreen = False
 
     def on_press_captions(self):
         c = DalyinskiClient()
@@ -786,6 +792,9 @@ class MainApp(App):
     title = "DalYinski"
     last_screen = None
     last_btn_pressed = None
+    # Are we in fullscreen?
+    in_fullscreen = False
+
 
     def build(self):
         self.screen_mgr = DalyinskiScrMgr()
