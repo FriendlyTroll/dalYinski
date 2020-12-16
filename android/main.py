@@ -567,26 +567,9 @@ class ImageButton(ButtonBehavior, Image):
 
 
 class PlayPauseButton(ButtonBehavior, Image):
-    ''' Custom button class '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.source='./img/baseline_play_circle_filled_black_48.png'
 
-    def on_press(self):
-        ''' Once the on_press signal is received check if the variable isPaused is set to True.
-        If it is true display the play icon so that the user can know that the button resumes play.
-        If false, so it's paused, on_press will play the video and display the pause icon.
-        Update what was the last command. '''
-        # TODO: Maybe just send the info on whether the video is playing from the server?
-        global isPaused
-        global last_cmd
-        if not isPaused:
-            self.source = './img/baseline_play_circle_filled_black_48.png'
-            isPaused = True
-        else: 
-            self.source = './img/baseline_pause_circle_filled_black_48.png'
-            isPaused = False
-        last_cmd = 'playpause'
 
 class PlstBtn(Button):
     def __init__(self, vidurl, **kwargs):
@@ -705,40 +688,17 @@ class SubscriptionsScreen(Screen):
         self.clear_widgets()
 
 class PlaybackScreen(Screen):
-    btn_play_pause = ObjectProperty()
-
     def on_press_play_previous(self):
-        # TODO: this is buggy, rework it
-        ''' For this method and the one below which plays next, we want to update the icon
-        only when the video is paused and we are skipping to the next video. Youtube plays
-        the next or previous video automatically when skipping so we are setting the pause
-        icon. Video will be playing so the paused state is False. '''
-        global isPaused
         c = DalyinskiClient()
         c.command(b'playprevious')
-        if not isPaused and last_cmd == 'prevornext':
-            pass
-        elif not isPaused and last_cmd == 'playpause':
-            pass
-        elif isPaused:
-            self.btn_play_pause.source = './img/baseline_pause_circle_filled_black_48.png'
-            isPaused = False
 
     def on_press_play_pause(self):
         c = DalyinskiClient()
         c.command(b'playpause')
        
     def on_press_play_next(self):
-        global isPaused
         c = DalyinskiClient()
         c.command(b'playnext')
-        if not isPaused and last_cmd == 'prevornext':
-            pass
-        elif not isPaused and last_cmd == 'playpause':
-            pass
-        elif isPaused:
-            self.btn_play_pause.source = './img/baseline_pause_circle_filled_black_48.png'
-            isPaused = False
 
     def on_press_watch_later(self):
         c = DalyinskiClient()
