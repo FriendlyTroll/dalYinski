@@ -75,13 +75,18 @@ class ServerConn:
                 return current_tab
     
     def open_browser(self):
-        ''' Open browser and load profile and install uBlock origin if it exists '''
+        ''' Open browser, load profile and install uBlock origin if it exists '''
+        '''
         # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
-        self.fp = webdriver.FirefoxProfile(self.browser_profile())
+        /usr/bin/firefox" "--marionette" "-foreground" "-no-remote" "-profile" "/tmp/rust_mozprofile3YPy06" is the command used to run it, try changing the -profile
+        argument to point to profile where its copied from.
+        '''
+        f_profile = webdriver.FirefoxProfile(self.browser_profile())
+        log_path = '/tmp/geckodriver.log'
         Notify.init('dalYinski server')
         noticon = Notify.Notification.new('dalYinski server', 'Opening web browser', '/usr/share/pixmaps/dalyinski-server.png')
         noticon.show()
-        self.bro = webdriver.Firefox(self.fp)
+        self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path)
         try:
             self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
             if self.ublock_ext:
@@ -89,7 +94,7 @@ class ServerConn:
                 self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
         except FileNotFoundError:
             print("No uBlock Origin extension found")
-        # bro.fullscreen_window()
+        self.bro.fullscreen_window()
         self.bro.get("https://www.youtube.com/")
 
     def close_browser(self):
