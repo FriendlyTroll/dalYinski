@@ -366,13 +366,12 @@ Builder.load_string("""
         data: root.video_list # a list of dictionaries which get passed to VideoItem
         viewclass: 'VideoItem'
         RecycleBoxLayout:
+            default_size: None, None
             default_size_hint: 1, None
-            default_size: None, 1
-            size_hint_y: None
+            size_hint: (1, None)
             height: self.minimum_height
             orientation: 'vertical'
             padding: [0, 10]
-
 
 <VideoItem>: # GridLayout
     id: id_video_item
@@ -380,7 +379,7 @@ Builder.load_string("""
     image_link: "link"
     image_desc: "text"
     video_link: "link"
-    child_height: 250
+    child_height: 450
     
     cols: 3
     height: self.minimum_height
@@ -388,6 +387,7 @@ Builder.load_string("""
         source: root.image_link
         height: root.child_height
         size_hint_y: None
+        allow_stretch: True
     Label:
         text: root.image_desc
         text_size: self.size
