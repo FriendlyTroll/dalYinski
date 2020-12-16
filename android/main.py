@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# TODO: handle back button pressed on android
 __version__ = '0.13'
 
 import threading
@@ -37,10 +38,6 @@ if store.exists('connection'):
     have_ip = store.get('connection')['ip']
 else:
     have_ip = None
-
-# variables for correct display of either play or pause button
-isPaused = True
-last_cmd = ''
 
 Builder.load_string("""
 <DalyinskiScrMgr>:
@@ -215,67 +212,36 @@ Builder.load_string("""
             orientation: 'vertical'
             size_hint: (1, 0.92)
             BoxLayout:
-                id: second_row_lyt
+                id: id_cc_vol_up_dwn
                 orientation: 'horizontal'
                 spacing: 1
                 ImageButton:
-                    id: btn_watch_later
-                    source: './img/baseline_watch_later_black_48.png' if self.state == 'normal' else './img/outline_watch_later_black_48.png'
-                    on_release: root.on_press_watch_later()
-                ImageButton:
-                    id: btn_scroll_up
-                    source: './img/baseline_arrow_upward_black_48.png'
-                    on_press: root.on_press_scroll_up()
-                ImageButton:
-                    id: btn_subscriptions
-                    source: './img/baseline_subscriptions_black_48.png' if self.state == 'normal' else './img/outline_subscriptions_black_48.png'
-                    on_release: root.on_press_subscriptions()
-            BoxLayout:
-                id: thumb_btns_lyt
-                orientation: 'horizontal'
-                spacing: 1
-                ImageButton:
-                    id: btn_prev_thumb
-                    source: './img/baseline_arrow_back_black_48.png'
-                    on_press: root.on_press_prev_thumb()
-                ImageButton:
-                    id: btn_select_thumb
-                    source: './img/baseline_subdirectory_arrow_left_black_48.png'
-                    on_press: root.on_press_select_thumb()
-                ImageButton:
-                    id: btn_next_thumb
-                    source: './img/baseline_arrow_forward_black_48.png'
-                    on_press: root.on_press_next_thumb()
-            BoxLayout:
-                id: cpt_sd_st_lyt
-                orientation: 'horizontal'
-                spacing: 1
+                    id: btn_volup
+                    source: './img/baseline_volume_up_black_48dp.png' if self.state == 'normal' else './img/outline_volume_up_black_48.png'
+                    on_press: root.on_press_vol_up()
                 ImageButton:
                     id: btn_captions
-                    source: './img/baseline_closed_caption_black_48.png' if self.state == 'normal' else './img/outline_closed_caption_black_48.png'
+                    source: './img/baseline_closed_caption_black_48dp.png' if self.state == 'normal' else './img/outline_closed_caption_black_48.png'
                     on_release: root.on_press_captions()
                 ImageButton:
-                    id: btn_scroll_down
-                    source: './img/baseline_arrow_downward_black_48.png'
-                    on_press: root.on_press_scroll_down()
-                ImageButton:
-                    id: btn_switch_tab
-                    source: './img/baseline_tab_black_48.png' if self.state == 'normal' else './img/baseline_tab_unselected_black_48.png'
-                    on_release: root.on_press_switch_tab()
+                    id: btn_voldwn
+                    source: './img/baseline_volume_down_black_48dp.png' if self.state == 'normal' else './img/outline_volume_down_black_48.png'
+                    on_release: root.on_press_vol_down()
             BoxLayout:
                 id: playback_btns_lyt
                 orientation: 'horizontal'
                 spacing: 1
                 ImageButton:
                     id: btn_play_previous
-                    source: './img/baseline_skip_previous_black_48.png' if self.state == 'normal' else './img/outline_skip_previous_black_48.png'
+                    source: './img/baseline_skip_previous_black_48dp.png' if self.state == 'normal' else './img/outline_skip_previous_black_48.png'
                     on_release: root.on_press_play_previous()
                 PlayPauseButton:
                     id: btn_play_pause
+                    source: './img/baseline_play_circle_filled_black_36dp.png' if self.state == 'normal' else './img/outline_play_circle_outline_black_48.png'
                     on_press: root.on_press_play_pause()
                 ImageButton:
                     id: btn_play_next
-                    source: './img/baseline_skip_next_black_48.png' if self.state == 'normal' else './img/outline_skip_next_black_48.png'
+                    source: './img/baseline_skip_next_black_48dp.png' if self.state == 'normal' else './img/outline_skip_next_black_48.png'
                     on_release: root.on_press_play_next()
             BoxLayout:
                 id: ff_rew_home_btns_lyt
@@ -283,16 +249,15 @@ Builder.load_string("""
                 spacing: 1
                 ImageButton:
                     id: btn_rewind
-                    source: './img/baseline_replay_5_black_48.png'
+                    source: './img/baseline_replay_5_black_48dp.png' if self.state == 'normal' else './img/outline_replay_5_black_48.png'
                     on_press: root.on_press_rewind()
                 ImageButton:
                     id: btn_home
-                    # source: './img/baseline_fullscreen_black_48.png' if self.state == 'normal' else './img/outline_home_black_48.png'
-                    source: './img/baseline_home_black_48dp.png' if self.state == 'normal' else './img/outline_home_black_48.png'
+                    source: './img/baseline_home_black_36dp.png' if self.state == 'normal' else './img/outline_home_black_48.png'
                     on_release: root.on_press_go_home()
                 ImageButton:
                     id: btn_forward
-                    source: './img/baseline_forward_5_black_48.png'
+                    source: './img/baseline_forward_5_black_48dp.png' if self.state == 'normal' else './img/outline_forward_5_black_48.png'
                     on_press: root.on_press_fforward()
 
             Button:
@@ -801,29 +766,17 @@ class PlaybackScreen(Screen):
         c = DalyinskiClient()
         c.command(b'rewind')
 
-    def on_press_next_thumb(self):
-        c = DalyinskiClient()
-        c.command(b'nextthumb')
-
-    def on_press_prev_thumb(self):
-        c = DalyinskiClient()
-        c.command(b'prevthumb')
-
-    def on_press_select_thumb(self):
-        c = DalyinskiClient()
-        c.command(b'selectthumb')
-
-    def on_press_scroll_down(self):
-        c = DalyinskiClient()
-        c.command(b'scrolldown')
-
-    def on_press_scroll_up(self):
-        c = DalyinskiClient()
-        c.command(b'scrollup')
-
     def on_press_subscriptions(self):
         c = DalyinskiClient()
         c.command(b'subscriptions')
+
+    def on_press_vol_up(self):
+        c = DalyinskiClient()
+        c.command(b'volup')
+
+    def on_press_vol_down(self):
+        c = DalyinskiClient()
+        c.command(b'voldown')
 
 class DalyinskiScrMgr(ScreenManager):
     pass

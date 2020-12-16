@@ -2,8 +2,8 @@
 
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
-
-__version__ = '0.10'
+# BUG: If the browser is minimized nothing gets sent to client
+__version__ = '0.11'
 
 import socket
 import time
@@ -28,7 +28,6 @@ class ServerConn:
         self.PORT = 65432
         self.MAGIC = 'dalyinskimagicpkt'
         self.li = 0 # index used for change_tab()
-        self.last_thumbnail_was = '' # keep track of the last thumbnail command; see below
     
     def browser_profile(self):
         ''' Find the selenium profile directory '''
@@ -118,24 +117,6 @@ class ServerConn:
                     self.open_browser()
                elif "ping" in self.data:
                    print("ping received")
-               elif "selectthumb" in self.data:
-                    try:
-                        # Try clicking on selected video on Home page. Keep track of what was the last command received for
-                        # the thumbnail so that we can click on the correct one. We need index - 1 because it is immediately
-                        # incremented in the nextthumb handler below, after drawing the border
-                        print("Javascript PLAYPAUSE")
-                        if self.last_thumbnail_was == 'prevthumb':
-                            self.bro.execute_script('''
-var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
-thumbnailList[window.current_idx].click();
-                        ''')
-                        else:
-                            self.bro.execute_script('''
-var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
-thumbnailList[window.current_idx - 1].click();
-                        ''')
-                    except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
-                       print("Javascript Exception >>", e)
                elif "playpause" in self.data:
                     print('play/pause received')
                     try:
@@ -226,92 +207,15 @@ thumbnailList[window.current_idx - 1].click();
                        ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_tag_name('body'), Keys.ARROW_LEFT).perform()
                    except (exceptions.ElementNotInteractableException,exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                        print(e)
-               elif "nextthumb" in self.data:
-                   print('nextthumb received')
-                   try:
-                       if self.last_thumbnail_was == 'prevthumb':
-                           self.bro.execute_script('''
-/* 
-Defining a variable current_idx as "var current_idx = 0" limits the scope to the
-execution of the script. Selenium wraps the execution of javascript snippets into
-their own script so variables don't survive the end of the script (if..else always
-sees current_idx = 0). window.current_idx puts the variable into global scope
-*/
-if (typeof window.current_idx === 'undefined') {
-	window.current_idx = 0;  
-  
-}
-
-var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
-if (current_idx == 0) {
-    thumbnailList[window.current_idx].style.setProperty('border', '8px inset red'); // set border on current thumbnail
-    window.current_idx +=1;
-} else {
-    window.current_idx +=1; // since last command was prevthumb we need to increment the index first for drawing the border
-    thumbnailList[window.current_idx - 1].style.removeProperty('border'); // remove border from previous thumbnail
-    thumbnailList[window.current_idx].style.setProperty('border', '8px inset red'); // set border on current thumbnail
-    window.current_idx +=1; // increment index again to get next thumbnail
-} ''')
-                           self.last_thumbnail_was = 'nextthumb'
-                       else:
-                           self.bro.execute_script('''
-if (typeof window.current_idx === 'undefined') {
-	window.current_idx = 0;  
-  
-}
-
-var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
-if (current_idx == 0) {
-    thumbnailList[window.current_idx].style.setProperty('border', '8px inset red'); // set border on current thumbnail
-    window.current_idx +=1;
-} else {
-    thumbnailList[window.current_idx - 1].style.removeProperty('border'); // remove border from previous thumbnail
-    thumbnailList[window.current_idx].style.setProperty('border', '8px inset red'); // set border on current thumbnail
-    window.current_idx +=1;
-} ''')
-                           self.last_thumbnail_was = 'nextthumb'
-                   except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
-                       print(e)
-               elif "prevthumb" in self.data:
-                  print('prevthumb received') 
-                  try:
-                      if self.last_thumbnail_was == 'nextthumb':
-                          self.bro.execute_script('''
-var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
-window.current_idx -=1;
-thumbnailList[window.current_idx].style.removeProperty('border'); // remove border from current thumbnail
-thumbnailList[window.current_idx - 1].style.setProperty('border', '8px inset red'); // draw border on previous thumbnail
-window.current_idx -=1; ''')
-                          self.last_thumbnail_was = 'prevthumb'
-                      else:
-                          self.bro.execute_script('''
-var thumbnailList = document.querySelectorAll('#thumbnail'); // get list of all thumbnail ids, gets video thumbnails
-thumbnailList[window.current_idx].style.removeProperty('border'); // remove border from current thumbnail
-thumbnailList[window.current_idx - 1].style.setProperty('border', '8px inset red'); // draw border on previous thumbnail
-window.current_idx -=1; ''')
-                          self.last_thumbnail_was = 'prevthumb'
-                  except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
-                      print(e)
-               elif "scrolldown" in self.data:
-                   print('scrolldown received')
-                   try:
-                       self.bro.execute_script(self.js_scroll_down(350))
-                   except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
-                       print(e)
-               elif "scrollup" in self.data:
-                   print('scrollup received')
-                   try:
-                       self.bro.execute_script(self.js_scroll_up(350))
-                   except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
-                       print(e)
                elif "getthumbnails" in self.data:
                    print("getthumbnails received")
                    try:
                        try:
+                           time.sleep(1.0)
                            for _ in range(3):
                                # scroll the page so that JS loads some videos to send
                                self.bro.execute_script(self.js_scroll_down(3000))
-                               time.sleep(1)
+                               time.sleep(1.0)
                        except (exceptions.JavascriptException, exceptions.WebDriverException) as e:
                            print(type(e), e)
 
@@ -422,7 +326,6 @@ window.current_idx -=1; ''')
                    print("playvideo received")
                    try:
                        # self.data.split()[1] is video url received from client
-                       print(self.data.split()[1])
                        self.bro.get(self.data.split()[1])
                    except Exception as e:
                        print("playvideo EXCEPTION: ", e)
@@ -433,6 +336,18 @@ window.current_idx -=1; ''')
                       self.bro.find_element_by_xpath("//a[@id='endpoint'][@href='/feed/subscriptions']/paper-item/yt-icon").click()
                    except Exception as e:
                        print("subscriptions EXCEPTION: ", e)
+               elif "volup" in self.data:
+                   print("volup received")
+                   try:
+                       ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_xpath('//div[@class="ytp-left-controls"]'), Keys.ARROW_UP).perform()
+                   except Exception as e:
+                       print("volup EXCEPTION: ", e)
+               elif "voldown" in self.data:
+                   print("voldown received")
+                   try:
+                       ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_xpath('//div[@class="ytp-left-controls"]'), Keys.ARROW_DOWN).perform()
+                   except Exception as e:
+                       print("voldown EXCEPTION: ", e)
                elif not self.data:
                    print('No data received')
                self.conn.sendall(b'Hi from server')
