@@ -378,28 +378,32 @@ Builder.load_string("""
     image_link: "link"
     image_desc: "text"
     video_link: "link"
-    child_height: 450
     
-    cols: 3
+    cols: 1
     height: self.minimum_height
-    AsyncImage:
-        source: root.image_link
-        height: root.child_height
-        size_hint_y: None
-        allow_stretch: True
-    Label:
-        text: root.image_desc
-        text_size: self.size
-        font_size: '10sp'
-        valign: 'center'
-        height: root.child_height
-        size_hint_y: None
-        max_lines: 3
-    YTPlay:
-        height: root.child_height
-        size_hint_y: None
-        on_release: 
-            self.play_video(root.video_link)
+    BoxLayout:
+        size_hint: (1, None)
+        height: self.minimum_height
+        orientation: 'vertical'
+        AsyncImage:
+            source: root.image_link
+            height: sp(200)
+            size_hint: (1, None)
+            allow_stretch: True
+        Label:
+            text: root.image_desc
+            text_size: self.size
+            font_size: '10sp'
+            valign: 'center'
+            halign: 'center'
+            height: sp(50)
+            size_hint: (1, None)
+            max_lines: 3
+        YTPlay:
+            height: sp(50)
+            size_hint: (1, None)
+            on_release: 
+                self.play_video(root.video_link)
 
 <YTPlay>:
     text: "Play"
