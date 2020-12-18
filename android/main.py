@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# TODO: handle back button pressed on android
 __version__ = '0.13'
 
 import threading
@@ -745,7 +744,14 @@ class PlaybackScreen(Screen):
         c.command(b'voldown')
 
 class DalyinskiScrMgr(ScreenManager):
-    pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        Window.bind(on_keyboard=self.go_back)
+
+    def go_back(self, window, key, *largs):
+        if key == 27:
+            self.current = 'start_screen'
+            return True
 
 
 class MainApp(App):
