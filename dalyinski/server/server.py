@@ -11,6 +11,7 @@ import threading
 import os
 import pickle
 import struct
+import sys
 
 from selenium import webdriver
 from selenium.common import exceptions
@@ -19,6 +20,7 @@ from selenium.webdriver.common.keys import Keys
 
 # local imports
 from dalyinski.server.browser import FFBrowser
+from dalyinski.server.gui_dialogs import InfoFrame
 
 class ServerConn:
     def __init__(self):
@@ -44,6 +46,10 @@ class ServerConn:
             for folder in os.listdir(self.mozilla_dir):
                 if (folder.find("selenium") != -1):
                     self.selenium_dir = folder
+                else:
+                    info = InfoFrame()
+                    info.Show()
+                    sys.exit()
             self.mozilla_dir = os.path.join(self.mozilla_dir, self.selenium_dir)
             return self.mozilla_dir
 
