@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
-from dalyinski.server.gui import Win
+import wx
+from dalyinski.server.gui import WinFrame
 
 if __name__=="__main__":
-    win = Win()
+    app = wx.App()
+    win = WinFrame()
+    app.MainLoop()
+

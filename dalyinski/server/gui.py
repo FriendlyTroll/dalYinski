@@ -1,79 +1,49 @@
 #!/usr/bin/env python3
 
-__version__ = '0.5'
+__version__ = '0.6'
 
-import gi
-gi.require_version("Gtk", "3.0")
-gi.require_version('Notify', '0.7')
-from gi.repository import Gtk, Notify
+import wx
+import wx.adv
 
 from dalyinski.server.server import ServerConn
 
-
-class Win (Gtk.Window):
+class WinFrame(wx.Frame):
     def __init__(self):
-        Gtk.Window.__init__(self)
-        self.set_title("dalYinski server")
-        self.connect("delete-event", self.delete_event)
-        # create a virtical box to hold some widgets
-        vbox = Gtk.VBox(False)
+        super().__init__(parent=None, title="dalYinski server", size=(210, 150))
+        status_bar = self.CreateStatusBar(style=wx.STB_DEFAULT_STYLE, id=-1, name="statusbar")
+        status_bar.SetStatusText(f"GUI version: {__version__}")
 
-        # make a startserver button
-        startserver_btn = Gtk.Button("Start server and open browser")
-        startserver_btn.connect("clicked",self.run_server)
-
-        # make a quit button
-        quit_btn = Gtk.Button("Quit")
-        quit_btn.connect("clicked",self.quit)
-
-        # add the startserver to the vbox
-        vbox.pack_start(startserver_btn, expand=True, fill=True, padding=0)
-        vbox.pack_start(quit_btn, expand=True, fill=True, padding=0)
-        # create a label and add to the vbox
-        label=Gtk.Label("Server GUI for dalYinski")
-        version_label=Gtk.Label(f'GUI version: {__version__}')
-        vbox.pack_start(label, expand=True, fill=True, padding=0)
-        vbox.pack_start(version_label, expand=True, fill=True, padding=0)
-        #add the vbox to the Window
-        self.add(vbox)
-        #show all of the stuff
-        self.show_all()
-        #make a status icon
-        self.statusicon = Gtk.StatusIcon.new_from_file('/usr/share/pixmaps/dalyinski-server.png')
-        self.statusicon.connect('activate', self.status_clicked )
-        self.statusicon.set_tooltip_text("The server is NOT running.")
         self.server = ServerConn()
 
-        #start the Gtk main loop
-        Gtk.main()
-    
-    def run_server(self, button):
+        panel = wx.Panel(self)
+        vert_sizer = wx.BoxSizer(wx.VERTICAL)
+        panel.SetSizer(vert_sizer)
+
+        start_srv_btn = wx.Button(panel, label="Start server and open browser", pos=(10, 10))
+        start_srv_btn.Bind(wx.EVT_BUTTON, self.run_server)
+
+        quit_btn = wx.Button(panel, label="Quit", pos=(10, 50))
+        quit_btn.Bind(wx.EVT_BUTTON, self.quit)
+
+        vert_sizer.Add(start_srv_btn, 0, wx.ALL | wx.EXPAND, 5)
+        vert_sizer.Add(quit_btn, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.Show()
+
+    def run_server(self, event):
+        busy = wx.BusyCursor()
         self.server.run()
-        # show a notification
-        Notify.init('dalYinski server')
-        noticon = Notify.Notification.new('dalYinski server', 'Server started', '/usr/share/pixmaps/dalyinski-server.png')
-        noticon.show()
-        # set tooltip
-        self.statusicon.set_tooltip_text("The server is running.")
+        notification = wx.adv.NotificationMessage("dalYinski server", message="Opening browser").Show()
         self.server.open_browser()
+        del busy
 
 
-    def quit(self,button):
+    def quit(self, event):
         self.server.close_browser()
-        #quit the Gtk main loop
-        Gtk.main_quit()
-
+        self.Destroy()
     
-    def delete_event(self,window,event):
-        #don't delete; hide instead
-        self.hide_on_delete()
-        self.statusicon.set_tooltip_text("the window is hidden")
-        return True
-        
-    def status_clicked(self,status):
-        #unhide the window
-        self.show_all()
-        # self.statusicon.set_tooltip_text("the window is visible")
         
 if __name__=="__main__":
-    win = Win()
+    app = wx.App()
+    frame = WinFrame()
+    app.MainLoop()

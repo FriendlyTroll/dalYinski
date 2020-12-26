@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 # BUG: If the browser is minimized nothing gets sent to client
-__version__ = '0.11'
+__version__ = '0.12'
 
 import socket
 import time
@@ -16,7 +16,6 @@ from selenium import webdriver
 from selenium.common import exceptions
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
-from gi.repository import Gtk, Notify
 
 # local imports
 from dalyinski.server.browser import FFBrowser
@@ -30,13 +29,23 @@ class ServerConn:
         self.li = 0 # index used for change_tab()
     
     def browser_profile(self):
-        ''' Find the selenium profile directory '''
-        self.mozilla_dir = os.path.join(os.environ["HOME"], '.mozilla/firefox')
-        for folder in os.listdir(self.mozilla_dir):
-            if (folder.find("selenium") != -1):
-                self.selenium_dir = folder
-        self.mozilla_dir = os.path.join(self.mozilla_dir, self.selenium_dir)
-        return self.mozilla_dir
+        ''' Find the selenium profile directory. Check if we are
+        on Linux (posix) or Windows (nt).'''
+        if os.name == 'posix':
+            self.mozilla_dir = os.path.join(os.environ["HOME"], '.mozilla/firefox')
+            for folder in os.listdir(self.mozilla_dir):
+                if (folder.find("selenium") != -1):
+                    self.selenium_dir = folder
+            self.mozilla_dir = os.path.join(self.mozilla_dir, self.selenium_dir)
+            return self.mozilla_dir
+        elif os.name == 'nt':
+            # %APPDATA% is usually C:\Users\<Username>\AppData\Roaming
+            self.mozilla_dir = os.path.join(os.environ["APPDATA"], 'Mozilla\Firefox\Profiles\\\\')
+            for folder in os.listdir(self.mozilla_dir):
+                if (folder.find("selenium") != -1):
+                    self.selenium_dir = folder
+            self.mozilla_dir = os.path.join(self.mozilla_dir, self.selenium_dir)
+            return self.mozilla_dir
 
     def get_ip_address(self):
         ''' Gets the local ip address of pc where this server is running
@@ -83,9 +92,6 @@ class ServerConn:
         '''
         f_profile = webdriver.FirefoxProfile(self.browser_profile())
         log_path = '/tmp/geckodriver.log'
-        Notify.init('dalYinski server')
-        noticon = Notify.Notification.new('dalYinski server', 'Opening web browser', '/usr/share/pixmaps/dalyinski-server.png')
-        noticon.show()
         self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path)
         try:
             self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
