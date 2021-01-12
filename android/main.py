@@ -158,13 +158,15 @@ Builder.load_string("""
     press_func: root.on_press_find_server
     BoxLayout:
         orientation: 'vertical'
-        Banner:
-            size_hint: (1, 0.08)
-            text: "Establish server connection"
+        Banner: # Label
+            size_hint: (1, 0.4)
+            text_size: root.width, None
+            halign: 'center'
+            text: "Before using this app please make sure you have installed and started the server application on your desktop/laptop computer first. You can download the new version of the server at https://github.com/FriendlyTroll/dalYinski. Then hit the button below to connect."
         Button:
             text: "Connect to server"
             text_size: (400, None)
-            size_hint: (1, 0.92)
+            size_hint: (1, 0.6)
             halign: 'center'
             on_release: 
                 root.change_start_scr_spinner_txt()
@@ -785,6 +787,7 @@ class MainApp(App):
             self.screen_mgr.current = 'start_screen'
         else:
             pass
+
 
 if __name__ == '__main__':
     app = MainApp()

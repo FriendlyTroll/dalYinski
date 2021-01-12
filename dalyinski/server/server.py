@@ -106,7 +106,7 @@ class ServerConn:
                 self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
         except FileNotFoundError:
             print("No uBlock Origin extension found")
-        self.bro.fullscreen_window()
+        # self.bro.fullscreen_window()
         self.bro.get("https://www.youtube.com/")
 
     def close_browser(self):
