@@ -12,6 +12,8 @@ import os
 import pickle
 import struct
 import sys
+import urllib.request
+import zipfile
 
 from selenium import webdriver
 from selenium.common import exceptions
@@ -91,9 +93,38 @@ class ServerConn:
                 self.li = 0
                 current_tab = webdrv.window_handles[self.li]
                 return current_tab
+
+    def dl_windows_geckodriver(self):
+        ''' Download the windows geckodriver and move it into PATH.
+        Linux geckodriver is installed when the server package is installed. '''
+        gd_zip = os.path.join(os.environ["TMP"], 'geckodriver.zip')
+        gd = 'C:/Windows/'
+        url = 'https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.28.0-win64.zip'
+        if not os.path.isfile(os.path.join(gd, 'geckodriver.exe')):
+            print("Downloading geckodriver binary...")
+            urllib.request.urlretrieve(url, gd_zip)
+            with zipfile.ZipFile(gd_zip) as zipf:
+                print("Extracting file...")
+                zipf.extractall(gd)
+        else:
+            pass
+
+    def dl_ublock(self):
+        ''' Download ublock extension. '''
+        url = 'https://addons.mozilla.org/firefox/downloads/file/3701081/ublock_origin-1.32.4-an+fx.xpi'
+
+        # make sure extensions directory exists
+        ext_dir = os.path.join(self.browser_profile(), "extensions")
+        if not os.path.isdir(ext_dir):
+            os.mkdir(ext_dir)
+
+        ubf = self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi"
+        if not os.path.isfile(ubf):
+            urllib.request.urlretrieve(url, ubf)
+
     
     def open_browser(self):
-        ''' Open browser, load profile and install uBlock origin if it exists '''
+        ''' Open browser, load profile and install uBlock origin. '''
         '''
         # TODO: below copies the existing profile to /tmp and does so each time when run, maybe there is way to reuse it again? Or make the profile slimmer
         /usr/bin/firefox" "--marionette" "-foreground" "-no-remote" "-profile" "/tmp/rust_mozprofile3YPy06" is the command used to run it, try changing the -profile
@@ -110,10 +141,15 @@ class ServerConn:
         try:
             self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
             if self.ublock_ext:
-                print("Installing uBlock Origin...")
+                print("Found existing uBlock Origin. Installing now...")
                 self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
         except FileNotFoundError:
-            print("No uBlock Origin extension found")
+            print("No uBlock Origin extension found. Downloading...")
+            self.dl_ublock()
+            self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
+            if self.ublock_ext:
+                print("Installing uBlock Origin...")
+                self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
         # self.bro.fullscreen_window()
         self.bro.get("https://www.youtube.com/")
 
