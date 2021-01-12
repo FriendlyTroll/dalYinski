@@ -41,15 +41,18 @@ class ServerConn:
             self.mozilla_dir = os.path.join(self.mozilla_dir, self.selenium_dir)
             return self.mozilla_dir
         elif os.name == 'nt':
-            # %APPDATA% is usually C:\Users\<Username>\AppData\Roaming
-            self.mozilla_dir = os.path.join(os.environ["APPDATA"], 'Mozilla\Firefox\Profiles\\\\')
+            m = "Mozilla"
+            f = "Firefox"
+            p = "Profiles"
+            # %APPDATA% is usually C:\Users\<Username>\AppData\Roaming; escape backslash
+            self.mozilla_dir = os.path.join(os.environ["APPDATA"], m, f, p + '\\')
             for folder in os.listdir(self.mozilla_dir):
                 if (folder.find("selenium") != -1):
                     self.selenium_dir = folder
-                else:
-                    info = InfoFrame()
-                    info.Show()
-                    sys.exit()
+            if not self.selenium_dir:
+                info = InfoFrame()
+                info.Show()
+                sys.exit()
             self.mozilla_dir = os.path.join(self.mozilla_dir, self.selenium_dir)
             return self.mozilla_dir
 
@@ -97,8 +100,13 @@ class ServerConn:
         argument to point to profile where its copied from.
         '''
         f_profile = webdriver.FirefoxProfile(self.browser_profile())
-        log_path = '/tmp/geckodriver.log'
-        self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path)
+        if os.name == 'posix':
+            log_path = '/tmp/geckodriver.log'
+            self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path)
+        elif os.name == 'nt':
+            # TMP = C:\Users\ante\AppData\Local\Temp
+            log_path = os.path.join(os.environ["TMP"], 'geckodriver.log')
+            self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path)
         try:
             self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
             if self.ublock_ext:
