@@ -138,18 +138,33 @@ class ServerConn:
             # TMP = C:\Users\ante\AppData\Local\Temp
             log_path = os.path.join(os.environ["TMP"], 'geckodriver.log')
             self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path)
-        try:
-            self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
-            if self.ublock_ext:
-                print("Found existing uBlock Origin. Installing now...")
-                self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
-        except FileNotFoundError:
-            print("No uBlock Origin extension found. Downloading...")
-            self.dl_ublock()
-            self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
-            if self.ublock_ext:
-                print("Installing uBlock Origin...")
-                self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
+        if os.name == 'posix':
+            try:
+                self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
+                if self.ublock_ext:
+                    print("Found existing uBlock Origin. Installing now...")
+                    self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
+            except FileNotFoundError:
+                print("No uBlock Origin extension found. Downloading...")
+                self.dl_ublock()
+                self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
+                if self.ublock_ext:
+                    print("Installing uBlock Origin...")
+                    self.bro.install_addon(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
+        elif os.name == 'nt':
+            try:
+                self.ublock_ext = os.stat(self.browser_profile() + r"\extensions\uBlock0@raymondhill.net.xpi")
+                if self.ublock_ext:
+                    print("Found existing uBlock Origin. Installing now...")
+                    self.bro.install_addon(self.browser_profile() + r"\extensions\uBlock0@raymondhill.net.xpi")
+            except FileNotFoundError:
+                print("No uBlock Origin extension found. Downloading...")
+                self.dl_ublock()
+                self.ublock_ext = os.stat(self.browser_profile() + r"\extensions\uBlock0@raymondhill.net.xpi")
+                if self.ublock_ext:
+                    print("Installing uBlock Origin...")
+                    self.bro.install_addon(self.browser_profile() + r"\extensions\uBlock0@raymondhill.net.xpi")
+
         # self.bro.fullscreen_window()
         self.bro.get("https://www.youtube.com/")
 
