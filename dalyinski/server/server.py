@@ -207,7 +207,7 @@ class ServerConn:
                    except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                        try:
                            # hamburger only is visible
-                           self.bro.find_element_by_xpath("//button[@id='button'][@aria-label='Guide']").click() # hamburger element
+                           self.bro.find_element_by_xpath("//yt-icon-button[@id='guide-button'][@class='style-scope ytd-masthead']").click() # hamburger element
                            time.sleep(1) # wait a bit
                            self.bro.find_element_by_xpath("//a[@id='endpoint'][@role='tablist'][@href='/playlist?list=WL']").click() # Watch later element
                        except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
@@ -245,7 +245,7 @@ class ServerConn:
                elif "captions" in self.data:
                    print("captions received")
                    try:
-                      self.bro.find_element_by_xpath("//button[@aria-label='Subtitles/closed captions (c)']").click()
+                      self.bro.find_element_by_xpath("//button[@class='ytp-subtitles-button ytp-button']").click()
                    except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException, exceptions.InvalidSessionIdException, exceptions.WebDriverException) as e:
                        print("captions exception: ", e)
                elif "switchtab" in self.data:
