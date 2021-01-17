@@ -349,12 +349,10 @@ class ServerConn:
                        try:
                            # expand "Show more" first
                            self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
-                       except exceptions.ElementNotInteractableException as e:
-                           print("Show more exception: ", type(e), e)
-                       except exceptions.NoSuchElementException as e:
+                       except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException) as e:
                            print("Show more exception: ", type(e), e)
                            # Open hamburger menu and locate the element
-                           self.bro.find_element_by_xpath('//yt-icon[@id="guide-icon"][@class="style-scope ytd-masthead"][@icon="yt-icons:menu"]').click() # hamburger element
+                           self.bro.find_element_by_xpath('//yt-icon[@id="guide-icon"][@class="style-scope ytd-masthead"][@icon="yt-icons:menu"]').click()
                            time.sleep(1) # wait a bit
                            self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
 
@@ -396,7 +394,11 @@ class ServerConn:
                    try:
                       self.bro.find_element_by_xpath("//a[@id='endpoint'][@href='/feed/subscriptions']/paper-item/yt-icon").click()
                    except Exception as e:
-                       print("subscriptions EXCEPTION: ", e)
+                       print("subscriptions EXCEPTION: ", type(e), e)
+                       # Open hamburger menu and locate the element
+                       self.bro.find_element_by_xpath('//yt-icon[@id="guide-icon"][@class="style-scope ytd-masthead"][@icon="yt-icons:menu"]').click()
+                       time.sleep(1) # wait a bit
+                       self.bro.find_element_by_xpath("//a[@id='endpoint'][@href='/feed/subscriptions']/paper-item/yt-icon").click()
                elif "volup" in self.data:
                    print("volup received")
                    try:
