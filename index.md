@@ -1,4 +1,5 @@
 ## Welcome to GitHub Pages
+https://github.com/FriendlyTroll/dalYinski/releases/latest
 
 You can use the [editor on GitHub](https://github.com/FriendlyTroll/dalYinski/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
 
