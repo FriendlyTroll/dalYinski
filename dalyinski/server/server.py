@@ -15,6 +15,17 @@ import sys
 import urllib.request
 import zipfile
 
+# hide geckodriver console on Windows
+if os.name == 'nt':
+    import win32gui
+
+    def enumWindowFunc(hwnd, windowList):
+        """ win32gui.EnumWindows() callback """
+        text = win32gui.GetWindowText(hwnd)
+        className = win32gui.GetClassName(hwnd)
+        if 'geckodriver' in text.lower() or 'geckodriver' in className.lower():
+            win32gui.ShowWindow(hwnd, False)
+
 from selenium import webdriver
 from selenium.common import exceptions
 from selenium.webdriver.common.action_chains import ActionChains
@@ -138,6 +149,7 @@ class ServerConn:
             # TMP = C:\Users\ante\AppData\Local\Temp
             log_path = os.path.join(os.environ["TMP"], 'geckodriver.log')
             self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path)
+            win32gui.EnumWindows(enumWindowFunc, []) # close geckodriver console window
         if os.name == 'posix':
             try:
                 self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
