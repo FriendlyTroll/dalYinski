@@ -1,21 +1,20 @@
 ---
 food: pizza
+readme: https://github.com/FriendlyTroll/dalYinski/blob/master/README.md
+win_url: https://github.com/FriendlyTroll/dalYinski/releases/download/v.0.12-beta1/dalyinski-server-0.12.exe
+ubuntu_url: https://github.com/FriendlyTroll/dalYinski/releases/download/v.0.12-beta1/dalyinski-0.12.deb
 ---
 
 
-## Welcome to dalyinski
+## Download the server from links below
 
-# dalYinski
-
-Control Youtube on your desktop browser via Android app.
-
-{{ page.food }}
+[Click here]({{ page.readme }}) on instructions for how to use this program.
 
 
-![useful image]({{ site.github.url }}/assets/win10.png)
-[Windows server app](https://github.com/FriendlyTroll/dalYinski/releases/download/v.0.12-beta1/dalyinski-server-0.12.exe)
+![win image]({{ site.github.url }}/assets/win10.png)
+[Windows server app]({{ page.win_url }})
 
-![useful image]({{ site.github.url }}/assets/ubuntu-icon.png)
-[Ubuntu server app](https://github.com/FriendlyTroll/dalYinski/releases/download/v.0.12-beta1/dalyinski-0.12.deb)
+![ubuntu image]({{ site.github.url }}/assets/ubuntu-icon.png)
+[Ubuntu server app]({{ page.ubuntu_url }})
 
 
