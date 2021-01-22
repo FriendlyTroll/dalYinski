@@ -162,7 +162,7 @@ Builder.load_string("""
             size_hint: (1, 0.4)
             text_size: root.width, None
             halign: 'center'
-            text: "Before using this app please make sure you have installed and started the server application on your desktop/laptop computer first. You can download the new version of the server at https://github.com/FriendlyTroll/dalYinski. Then hit the button below to connect."
+            text: "Before using this app please make sure you have installed and started the server application on your desktop/laptop computer first. You can download the new version of the server at https://friendlytroll.github.io/dalYinski. Then hit the button below to connect."
         Button:
             text: "Connect to server"
             text_size: (400, None)
