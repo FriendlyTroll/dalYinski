@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 # BUG: If the browser is minimized nothing gets sent to client
-__version__ = '0.12'
+__version__ = '0.13'
 
 import socket
 import time
@@ -377,11 +377,16 @@ class ServerConn:
                            # expand "Show more" first
                            self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
                        except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException) as e:
-                           print("Show more exception: ", type(e), e)
-                           # Open hamburger menu and locate the element
-                           self.bro.find_element_by_xpath('//yt-icon[@id="guide-icon"][@class="style-scope ytd-masthead"][@icon="yt-icons:menu"]').click()
-                           time.sleep(1) # wait a bit
-                           self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
+                           try:
+                               print("Show more exception: ", type(e), e)
+                               # Open hamburger menu and locate the element
+                               self.bro.find_element_by_xpath('//yt-icon[@id="guide-icon"][@class="style-scope ytd-masthead"][@icon="yt-icons:menu"]').click()
+                               time.sleep(1) # wait a bit
+                               self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
+                           except (exceptions.ElementNotInteractableException, exceptions.ElementClickInterceptedException) as e:
+                               print("The list of playlists is probably already expanded. Got exception: ", type(e), e)
+                               # simply move on to getting the videos below
+                               pass
 
                        # Your videos, Your movies and Watch later elements
                        vid_mv_wl = self.bro.find_elements_by_xpath('//div[@id="section-items"]/ytd-guide-entry-renderer/a[@id="endpoint"][@class="yt-simple-endpoint style-scope ytd-guide-entry-renderer"]')
