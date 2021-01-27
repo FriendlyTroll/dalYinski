@@ -137,7 +137,19 @@ class ServerConn:
         if not os.path.isfile(ubf):
             urllib.request.urlretrieve(url, ubf)
 
-    
+    def check_new_version(self):
+        ''' Check for new server version by comparing string in text files. '''
+        if os.name == 'posix':
+            v = urllib.request.urlopen('https://friendlytroll.github.io/dalYinski/LINUX_SERVER_VERSION.txt')
+        elif os.name == 'nt':
+            v = urllib.request.urlopen('https://friendlytroll.github.io/dalYinski/WIN_SERVER_VERSION.txt')
+
+        ver = v.read(10).decode('utf-8') # read 10 bytes from response and decode
+        if __version__ < ver: # if this file has smaller version number than the one entered in text file show info
+            print("New server version is available!")
+            info = InfoFrame(text="New server version is available!\nDownload it from https://friendlytroll.github.io/dalYinski")
+            info.Show()
+
     def open_browser(self):
         ''' Open browser, load profile and install uBlock origin. '''
         '''
@@ -149,11 +161,13 @@ class ServerConn:
         if os.name == 'posix':
             log_path = '/tmp/geckodriver.log'
             self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path)
+            self.check_new_version()
         elif os.name == 'nt':
             # TMP = C:\Users\ante\AppData\Local\Temp
             log_path = os.path.join(os.environ["TMP"], 'geckodriver.log')
             self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path)
             win32gui.EnumWindows(enumWindowFunc, []) # close geckodriver console window
+            self.check_new_version()
         if os.name == 'posix':
             try:
                 self.ublock_ext = os.stat(self.browser_profile() + "/extensions/uBlock0@raymondhill.net.xpi")
