@@ -51,6 +51,10 @@ class ServerConn:
             for folder in os.listdir(self.mozilla_dir):
                 if (folder.find("selenium") != -1):
                     self.selenium_dir = folder
+            if not self.selenium_dir:
+                info = InfoFrame(text="Looks like you didn't create separate Firefox profile.\n Please create it first.")
+                info.Show()
+                sys.exit()
             self.mozilla_dir = os.path.join(self.mozilla_dir, self.selenium_dir)
             return self.mozilla_dir
         elif os.name == 'nt':
@@ -63,7 +67,7 @@ class ServerConn:
                 if (folder.find("selenium") != -1):
                     self.selenium_dir = folder
             if not self.selenium_dir:
-                info = InfoFrame()
+                info = InfoFrame(text="Looks like you didn't create separate Firefox profile.\n Please create it first.")
                 info.Show()
                 sys.exit()
             self.mozilla_dir = os.path.join(self.mozilla_dir, self.selenium_dir)
