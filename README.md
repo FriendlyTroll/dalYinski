@@ -53,3 +53,9 @@ Install from win-requirements.txt.
 # Icons and resources used
 * Android icon: "File:B&W YouTube icon.png" by Rodrigo.Argenton is licensed under CC0 1.0
 * Other icons: https://material.io/resources/icons/?style=baseline
+
+# Screenshots
+![main screen](screenshots/main.png)
+![browse](screenshots/browse.png)
+![playback](screenshots/playback.png)
+![playlists](screenshots/playlists.png)
