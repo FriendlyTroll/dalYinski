@@ -55,7 +55,7 @@ Install from win-requirements.txt.
 * Other icons: https://material.io/resources/icons/?style=baseline
 
 # Screenshots
-<img src="screenshots/main.png" width=78 height=126>
-<img src="screenshots/browse.png" width=78 height=126>
-<img src="screenshots/playback.png" width=78 height=126>
-<img src="screenshots/playlists.png" width=78 height=126>
+<img src="screenshots/main.png" width=200 height=400>
+<img src="screenshots/browse.png" width=200 height=400>
+<img src="screenshots/playback.png" width=200 height=400>
+<img src="screenshots/playlists.png" width=200 height=400>
