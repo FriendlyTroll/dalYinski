@@ -767,6 +767,8 @@ class MainApp(App):
     # Are we in fullscreen?
     in_fullscreen = False
 
+    def open_settings(self, *largs):
+            pass
 
     def build(self):
         self.screen_mgr = DalyinskiScrMgr()
