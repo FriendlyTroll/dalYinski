@@ -139,16 +139,19 @@ class ServerConn:
 
     def check_new_version(self):
         ''' Check for new server version by comparing string in text files. '''
-        if os.name == 'posix':
-            v = urllib.request.urlopen('https://friendlytroll.github.io/dalYinski/LINUX_SERVER_VERSION.txt')
-        elif os.name == 'nt':
-            v = urllib.request.urlopen('https://friendlytroll.github.io/dalYinski/WIN_SERVER_VERSION.txt')
+        try:
+            if os.name == 'posix':
+                v = urllib.request.urlopen('https://friendlytroll.github.io/dalYinski/LINUX_SERVER_VERSION.txt')
+            elif os.name == 'nt':
+                v = urllib.request.urlopen('https://friendlytroll.github.io/dalYinski/WIN_SERVER_VERSION.txt')
 
-        ver = v.read(10).decode('utf-8') # read 10 bytes from response and decode
-        if __version__ < ver: # if this file has smaller version number than the one entered in text file show info
-            print("New server version is available!")
-            info = InfoFrame(text="New server version is available!\nDownload it from https://friendlytroll.github.io/dalYinski")
-            info.Show()
+            ver = v.read(10).decode('utf-8') # read 10 bytes from response and decode
+            if __version__ < ver: # if this file has smaller version number than the one entered in text file, show info
+                print("New server version is available!")
+                info = InfoFrame(text="New server version is available!\nDownload it from https://friendlytroll.github.io/dalYinski")
+                info.Show()
+        except Exception as e:
+            print("Exception when checking for new version: ", type(e), e)
 
     def open_browser(self):
         ''' Open browser, load profile and install uBlock origin. '''
