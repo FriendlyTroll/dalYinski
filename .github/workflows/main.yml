@@ -2,6 +2,9 @@
 
 name: CI
 
+env:
+    DEBIAN_VERSION: 0.13
+
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the dev branch
 on:
@@ -28,7 +31,7 @@ jobs:
 
     # Runs a single command using the runners shell
     - name: Build deb package
-      run: bash create_deb.sh 0.13
+      run: bash create_deb.sh ${{ env.DEBIAN_VERSION }}
 
     # Upload artifacts to Github
     # - uses: actions/upload-artifact@v2
@@ -41,8 +44,8 @@ jobs:
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: v{{ env.DEBIAN_VERSION }}
+          release_name: Release v{{ env.DEBIAN_VERSION }}
           draft: false
           prerelease: false
     - name: Upload Release Asset
@@ -52,8 +55,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./dalyinski-0.13.deb
-          asset_name: dalyinski-0.13.deb
+          asset_path: ./dalyinski-v{{ env.DEBIAN_VERSION }}.deb
+          asset_name: dalyinski-v{{ env.DEBIAN_VERSION }}.deb
           asset_content_type: application/vnd.debian.binary-package
 
 
