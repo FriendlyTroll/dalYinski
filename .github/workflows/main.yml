@@ -24,6 +24,10 @@ jobs:
         # The type of runner that the job will run on
         runs-on: ubuntu-20.04
         
+        # Save output from create release step to use in windows build job below
+        outputs:
+            output_url: ${{ steps.create_release.outputs.upload_url }}
+
         # Steps represent a sequence of tasks that will be executed as part of the job
         steps:
         # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -81,7 +85,7 @@ jobs:
           env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
-              upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+              upload_url: ${{ needs.debian-build.outputs.output_url }} # Get url from the output of previous job (debian build) above
               asset_path: ./dalyinski-${{ env.DALYINSKI_VERSION }}.exe
               asset_name: dalyinski-${{ env.DALYINSKI_VERSION }}.exe
               asset_content_type: application/vnd.microsoft.portable-executable
