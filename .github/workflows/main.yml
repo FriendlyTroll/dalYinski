@@ -55,7 +55,6 @@ jobs:
               asset_content_type: application/vnd.debian.binary-package
 
 
-jobs:
     windows-build:
         runs-on: windows-latest 
         steps:
