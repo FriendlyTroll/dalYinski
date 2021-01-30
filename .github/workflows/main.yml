@@ -16,10 +16,10 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+  # This workflow contains a single job called "debian-build"
   debian-build:
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -28,13 +28,32 @@ jobs:
 
     # Runs a single command using the runners shell
     - name: Build deb package
-      run: bash create_deb.sh 0.9
+      run: bash create_deb.sh 0.13
 
     # Upload artifacts to Github
-    - uses: actions/upload-artifact@v2
+    # - uses: actions/upload-artifact@v2
+    #   with:
+    #       name: dalyinski-0.13
+    #       path: dalyinski-0.13.deb
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-          name: dalyinski-0.9
-          path: dalyinski-0.9.deb
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./dalyinski-0.13.deb
+          asset_name: dalyinski-0.13.deb
 
 
  
