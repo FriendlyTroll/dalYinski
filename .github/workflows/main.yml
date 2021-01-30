@@ -2,9 +2,6 @@
 
 name: CI
 
-env:
-    DEBIAN_VERSION: 0.13
-
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the dev branch
 on:
@@ -20,6 +17,9 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "debian-build"
+  env:
+    DEBIAN_VERSION: 0.13
+
   debian-build:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
