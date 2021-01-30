@@ -14,13 +14,13 @@ on:
   #pull_request:
   #  branches: [ dev ]
 
+env:
+  DEBIAN_VERSION: 0.13
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "debian-build"
   debian-build:
-    env:
-      DEBIAN_VERSION: 0.13
-
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
 
@@ -44,8 +44,8 @@ jobs:
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-          tag_name: v{{ env.DEBIAN_VERSION }}
-          release_name: Release v{{ env.DEBIAN_VERSION }}
+          tag_name: v${{ env.DEBIAN_VERSION }}
+          release_name: Release v${{ env.DEBIAN_VERSION }}
           draft: false
           prerelease: false
     - name: Upload Release Asset
@@ -55,8 +55,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./dalyinski-v{{ env.DEBIAN_VERSION }}.deb
-          asset_name: dalyinski-v{{ env.DEBIAN_VERSION }}.deb
+          asset_path: ./dalyinski-v${{ env.DEBIAN_VERSION }}.deb
+          asset_name: dalyinski-v${{ env.DEBIAN_VERSION }}.deb
           asset_content_type: application/vnd.debian.binary-package
 
 
