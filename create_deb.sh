@@ -24,7 +24,7 @@ BINARY_DST=${APP_DIR}/usr/bin/
 echo "[*] Update version string in .desktop, Debian control file and github workflow files"
 sed -i "/Version/s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" ${TEMPLATE_DIR}/usr/share/applications/dalYinski.desktop
 sed -i "/Version/s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" ${TEMPLATE_DIR}/DEBIAN/control
-sed -i "s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" .github/workflows/main.yml
+# sed -i "s/[[:digit:]]\+\.[[:digit:]]\+/${VERSION}/" .github/workflows/main.yml
 
 echo "[*] Copy scripts to packaging dir"
 if [[ ! -d ${APP_DIR}/usr/lib/python3/dist-packages/ ]]
