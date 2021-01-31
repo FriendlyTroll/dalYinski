@@ -9,15 +9,26 @@ credentials.
 
 3. [Download and install server part](https://friendlytroll.github.io/dalYinski/)
 
+After starting the app on Windows you may get a popup "Windows protected your PC". Click on more info
+and choose "Run anyway".
+
+If you get a Windows Defender firewall window, check the box "Private networks, such as my home or work network"
+to allow the program to communicate with mobile app over your home network.
+
 4. Install Android app
 
 5. Click on "Start server and open browser"
 
-After starting the app on windows you may get a popup Windows Security Alert window. Check the box "Private networks, such as my home or work network".
 
 You should now be able to browse videos with the Android app.
 
 **Make sure the Firefox window remains open while you are using the app!**
+
+# Screenshots
+<img src="screenshots/main.png" width=200 height=400>
+<img src="screenshots/browse.png" width=200 height=400>
+<img src="screenshots/playback.png" width=200 height=400>
+<img src="screenshots/playlists.png" width=200 height=400>
 
 # Development Dependencies
 ## Linux
@@ -54,8 +65,3 @@ Install from win-requirements.txt.
 * Android icon: "File:B&W YouTube icon.png" by Rodrigo.Argenton is licensed under CC0 1.0
 * Other icons: https://material.io/resources/icons/?style=baseline
 
-# Screenshots
-<img src="screenshots/main.png" width=200 height=400>
-<img src="screenshots/browse.png" width=200 height=400>
-<img src="screenshots/playback.png" width=200 height=400>
-<img src="screenshots/playlists.png" width=200 height=400>
