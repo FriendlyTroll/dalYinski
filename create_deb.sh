@@ -55,8 +55,8 @@ sudo chmod 0755 /tmp/dalyinski-${VERSION}/usr/bin/dalyinski-server
 echo "[*] Build the package" 
 dpkg -b /tmp/dalyinski-${VERSION}
 
-echo "[*] Move deb package to current folder"
-mv /tmp/dalyinski-${VERSION}.deb ${PWD}
+echo "[*] Move deb package to $(realpath .)"
+mv /tmp/dalyinski-${VERSION}.deb $(realpath .)
 
 echo "[*] Cleanup"
 if [[ -d /tmp/dalyinski-${VERSION} ]]
