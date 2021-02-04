@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 # BUG: If the browser is minimized nothing gets sent to client
-__version__ = '0.13'
+__version__ = 0.13
 
 import socket
 import time
@@ -146,7 +146,7 @@ class ServerConn:
                 v = urllib.request.urlopen('https://friendlytroll.github.io/dalYinski/WIN_SERVER_VERSION.txt')
 
             ver = v.read(10).decode('utf-8') # read 10 bytes from response and decode
-            if __version__ < ver: # if this file has smaller version number than the one entered in text file, show info
+            if __version__ < float(ver): # if this file has smaller version number than the one entered in text file, show info
                 print("New server version is available!")
                 info = InfoFrame(text="New server version is available!\nDownload it from https://friendlytroll.github.io/dalYinski")
                 info.Show()
