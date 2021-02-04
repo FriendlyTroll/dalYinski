@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 # BUG: If the browser is minimized nothing gets sent to client
-__version__ = 0.13
+__version__ = 0.14
 
 import socket
 import time
