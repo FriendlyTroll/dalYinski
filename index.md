@@ -24,7 +24,6 @@ After starting the app on Windows you may get a popup "Windows protected your PC
 If you get a Windows Defender firewall window, check the box "Private networks, such as my home or work network" to allow the program to communicate with mobile app over your home network.
 
 4. Install Android app
-
 5. In server app click on "Start server and open browser"
 
 6. In the app tap "Connect to server" and wait a bit.
