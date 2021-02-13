@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.13'
+__version__ = '0.15'
 
 import threading
 import os
@@ -277,7 +277,7 @@ Builder.load_string("""
             pos: self.pos
             size: self.size
 
-<Header>: # This is a BoxLayout
+<Header>: # BoxLayout
     ######################
     # Top row main menu ##
     ######################
@@ -465,42 +465,81 @@ class ScrollableViewYThumbScreen(ScrollView):
     video_list = ListProperty()
 
     def __init__(self, client_cmd=b'getthumbnails', **kwargs):
+        ''' Send different command to server depending on which button was pressed.
+        Cache the list of videos as well for later use.'''
         super().__init__(**kwargs)
-        # Send different command to server depending on which button was pressed
+        self.client_cmd = client_cmd
         if app.last_btn_pressed == "ythome":
-            self.pf = show_popup("Fetching videos... \nPlease wait.")
-            PlaybackScreen().on_press_go_home()
-            self.pf.open()
-            time.sleep(1) # wait a bit for the page to load
-            self.client_cmd = client_cmd
+            if app.home_yt_vids_have:
+                Logger.info(f"dalYinskiClient: We already have some videos saved. Retrieving from cache.")
+                video_thumb_urls = app.home_yt_vids
+                self.video_urls(video_thumb_urls)
+            else:
+                Logger.info(f"dalYinskiClient: No videos cached. Fetching new videos.")
+                PlaybackScreen().on_press_go_home()
+                time.sleep(1) # wait a bit for the page to load
+                self.get_thumbnails(self.client_cmd)
         elif app.last_btn_pressed == "watchlater":
-            self.pf = show_popup("Fetching videos... \nPlease wait.")
-            PlaybackScreen().on_press_watch_later()
-            self.pf.open()
-            time.sleep(1)
-            self.client_cmd = b'getplaylistthumbnails'
+            if app.watch_later_vids_have:
+                Logger.info(f"dalYinskiClient: We already have some videos saved. Retrieving from cache.")
+                video_thumb_urls = app.watch_later_vids
+                self.video_urls(video_thumb_urls)
+            else:
+                Logger.info(f"dalYinskiClient: No videos cached. Fetching new videos.")
+                PlaybackScreen().on_press_watch_later()
+                time.sleep(1)
+                self.client_cmd = b'getplaylistthumbnails'
+                self.get_thumbnails(self.client_cmd)
         elif app.last_screen == "playlists_screen" or app.last_btn_pressed == "playlists":
-            self.pf = show_popup("Fetching videos... \nPlease wait.")
-            self.pf.open()
-            time.sleep(1)
-            self.client_cmd = b'getplaylistthumbnails'
-        elif app.last_screen == "start_screen" and app.last_btn_pressed == "subscriptions":
-            self.pf = show_popup("Fetching videos... \nPlease wait.")
-            PlaybackScreen().on_press_subscriptions()
-            self.pf.open()
-            time.sleep(1)
-            self.client_cmd = b'getsubscriptionhumbnails'
-        self.get_thumbnails()
+            ScrollableViewPlaylists()
+            if app.plstname_dict.get(app.last_plstname): # check if have previously opened the playlist
+                Logger.info(f"dalYinskiClient: We already have >>{app.last_plstname}<< videos saved. Retrieving from cache.")
+                video_thumb_urls = app.plstname_dict[app.last_plstname] # if we opened it previously, get its list from the dictionary
+                self.video_urls(video_thumb_urls)
+            else:
+                Logger.info(f"dalYinskiClient: No videos cached. Fetching new videos.")
+                time.sleep(1)
+                self.client_cmd = b'getplaylistthumbnails'
+                self.get_thumbnails(self.client_cmd)
+        elif app.last_btn_pressed == "subscriptions":
+            if app.subscriptions_vids_have:
+                Logger.info(f"dalYinskiClient: We already have some videos saved. Retrieving from cache.")
+                video_thumb_urls = app.subscriptions_vids
+                self.video_urls(video_thumb_urls)
+            else:
+                Logger.info(f"dalYinskiClient: No videos cached. Fetching new videos.")
+                PlaybackScreen().on_press_subscriptions()
+                time.sleep(1)
+                self.client_cmd = b'getsubscriptionhumbnails'
+                self.get_thumbnails(self.client_cmd)
 
-    def get_thumbnails(self):
-        self.t = threading.Thread(target=self._get_thumbnails, args=(), daemon=True)
+    def get_thumbnails(self, client_cmd):
+        self.t = threading.Thread(target=self._get_thumbnails, args=(client_cmd, ), daemon=True)
         self.t.start()
 
-    def _get_thumbnails(self):
-        c = DalyinskiClient()
+    def _get_thumbnails(self, client_cmd):
+        # print(f">>>>>>>>>>> Client cmd: {client_cmd}")
         # TODO: maybe use a decorator for checking if the server is up, so that it can be reused
-        video_thumb_urls = c.recv_thumb_list(self.client_cmd)
+        c = DalyinskiClient()
+        self.pf = show_popup("Fetching videos... \nPlease wait.")
+        self.pf.open()
+
+        video_thumb_urls = c.recv_thumb_list(client_cmd)
         self.video_urls(video_thumb_urls)
+
+        # cache video lists
+        if client_cmd == b'getthumbnails':
+            app.home_yt_vids = video_thumb_urls
+            app.home_yt_vids_have = True
+        elif client_cmd == b'getplaylistthumbnails' and app.last_btn_pressed == "watchlater":
+            app.watch_later_vids = video_thumb_urls
+            app.watch_later_vids_have = True
+        elif client_cmd == b'getplaylistthumbnails' and app.last_btn_pressed == "playlists":
+            app.plstname_dict[app.last_plstname] = video_thumb_urls
+        elif client_cmd == b'getsubscriptionhumbnails':
+            app.subscriptions_vids = video_thumb_urls
+            app.subscriptions_vids_have = True
+
         self.pf.dismiss()
 
     def video_urls(self, video_thumb_urls):
@@ -525,7 +564,13 @@ class ScrollableViewPlaylists(ScrollView):
         super().__init__(**kwargs)
         self.size = (Window.width, Window.height)
         self.scroll_view_plst.bind(minimum_height=self.scroll_view_plst.setter('height'))
-        self.get_playlists()
+        # check if have the playlists cached
+        if app.usr_playlists_have:
+            for plst in app.usr_playlists:
+                self.scroll_view_plst.add_widget(PlstBtn(str(plst[1]), text=str(plst[0]))) # plst[1] is playlist link (sent to the constructor in order to open it), plst[0] is playlist name
+        else:
+            # fetch playlists from server
+            self.get_playlists()
 
     def get_playlists(self):
         t = threading.Thread(target=self._get_playlists, daemon=True)
@@ -536,9 +581,10 @@ class ScrollableViewPlaylists(ScrollView):
 
         p = show_popup("Fetching playlists... \nPlease wait.")
         p.open()
-        usr_playlists = c.recv_playlists(b'getplaylists') # a list of tuples of playlist name and link
-        Logger.debug(f"dalYinskiApp: Got list of playlists: {usr_playlists}")
-        for plst in usr_playlists:
+        app.usr_playlists = c.recv_playlists(b'getplaylists') # a list of tuples of playlist name and link
+        app.usr_playlists_have = True
+        Logger.debug(f"dalYinskiApp: Got list of playlists: {app.usr_playlists}")
+        for plst in app.usr_playlists:
             self.scroll_view_plst.add_widget(PlstBtn(str(plst[1]), text=str(plst[0]))) # plst[1] is playlist link (sent to the constructor in order to open it), plst[0] is playlist name
         p.dismiss()
 
@@ -577,13 +623,22 @@ class PlayPauseButton(ButtonBehavior, Image):
 
 
 class PlstBtn(Button):
-    def __init__(self, vidurl, **kwargs):
-        super().__init__(**kwargs)
+    ''' Custom playlist button which receives playlist url
+    and the name of the playlist, which is used later as a dict key
+    to cache the playlist.'''
+    def __init__(self, vidurl, text=''):
+        super().__init__(text=text)
         self.vidurl = vidurl
+        self.plstname = text
 
     def select_playlist(self):
-        t = threading.Thread(target=self._select_playlist, daemon=True)
-        t.start()
+        app.last_plstname = self.plstname # set the last playlist name each time the button is pressed
+        if app.plstname_dict.get(app.last_plstname):
+            # if we previously opened the playlist no need to retrieve it again from server, just use cached one in app.plstname_dict
+            pass
+        else:
+            t = threading.Thread(target=self._select_playlist, daemon=True)
+            t.start()
 
     def _select_playlist(self):
         ''' Send playvideo command + video url from the list
@@ -766,6 +821,21 @@ class MainApp(App):
     last_btn_pressed = None
     # Are we in fullscreen?
     in_fullscreen = False
+
+    usr_playlists = []
+    usr_playlists_have = False
+
+    home_yt_vids = []
+    home_yt_vids_have = False
+
+    watch_later_vids = []
+    watch_later_vids_have = False
+
+    subscriptions_vids = []
+    subscriptions_vids_have = False
+
+    last_plstname = None
+    plstname_dict = {}
 
     def open_settings(self, *largs):
             pass
