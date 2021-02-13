@@ -351,7 +351,7 @@ Builder.load_string("""
 
     GridLayout:
         id: scroll_view_plst
-        row_default_height: 100
+        row_default_height: 200
         cols: 1
         spacing: 1
         size_hint_y: None
