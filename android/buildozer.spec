@@ -47,10 +47,10 @@ requirements = python3==3.8.5,hostpython3==3.8.5,kivy==2.0.0
 #garden_requirements =
 
 # (str) Presplash of the application
-presplash.filename = %(source.dir)s/img/BW_YouTube_icon.png
+presplash.filename = %(source.dir)s/img/icon3.png
 
 # (str) Icon of the application
-icon.filename = %(source.dir)s/img/BW_YouTube_icon.png
+icon.filename = %(source.dir)s/img/icon3.png
 
 # (str) Supported orientation (one of landscape, sensorLandscape, portrait or all)
 orientation = portrait
