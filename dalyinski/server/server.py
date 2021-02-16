@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 # BUG: If the browser is minimized nothing gets sent to client
-__version__ = 0.14
+__version__ = 0.15
 
 import socket
 import time
@@ -113,8 +113,8 @@ class ServerConn:
         ''' Download the windows geckodriver and move it into PATH.
         Linux geckodriver is installed when the server package is installed. '''
         gd_zip = os.path.join(os.environ["TMP"], 'geckodriver.zip')
-        gd = 'C:/Windows/'
-        url = 'https://github.com/mozilla/geckodriver/releases/download/v0.28.0/geckodriver-v0.28.0-win64.zip'
+        gd = os.environ["USERPROFILE"]
+        url = 'https://github.com/mozilla/geckodriver/releases/download/v0.29.0/geckodriver-v0.29.0-win64.zip'
         if not os.path.isfile(os.path.join(gd, 'geckodriver.exe')):
             print("Downloading geckodriver binary...")
             urllib.request.urlretrieve(url, gd_zip)
@@ -160,6 +160,8 @@ class ServerConn:
         /usr/bin/firefox" "--marionette" "-foreground" "-no-remote" "-profile" "/tmp/rust_mozprofile3YPy06" is the command used to run it, try changing the -profile
         argument to point to profile where its copied from.
         '''
+        if os.name == 'nt':
+            self.dl_windows_geckodriver()
         f_profile = webdriver.FirefoxProfile(self.browser_profile())
         if os.name == 'posix':
             log_path = '/tmp/geckodriver.log'
@@ -168,7 +170,7 @@ class ServerConn:
         elif os.name == 'nt':
             # TMP = C:\Users\ante\AppData\Local\Temp
             log_path = os.path.join(os.environ["TMP"], 'geckodriver.log')
-            self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path)
+            self.bro = webdriver.Firefox(firefox_profile=f_profile, service_log_path=log_path, executable_path=os.path.join(os.environ["USERPROFILE"], "geckodriver.exe"))
             win32gui.EnumWindows(enumWindowFunc, []) # close geckodriver console window
             self.check_new_version()
         if os.name == 'posix':
