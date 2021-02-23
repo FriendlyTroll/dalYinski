@@ -3,7 +3,7 @@
 
 2. Create new firefox profile
 
-In URL bar type "about:config" and click "Create a New Profile". Name it "selenium".
+Open firefox and in address bar type "about:profiles" and click "Create a New Profile". Name it "selenium".
 Then click "Launch profile in new browser" and navigate to Youtube and login with your
 credentials. 
 
@@ -12,8 +12,7 @@ credentials.
 After starting the app on Windows you may get a popup "Windows protected your PC". Click on more info
 and choose "Run anyway".
 
-If you get a Windows Defender firewall window, check the box "Private networks, such as my home or work network"
-to allow the program to communicate with mobile app over your home network.
+If you get a Windows Defender firewall window, check the box "Private networks, such as my home or work network" and "Public networks..." to allow the program to communicate with mobile app over your home network and check for updates.
 
 4. Install Android app
 
