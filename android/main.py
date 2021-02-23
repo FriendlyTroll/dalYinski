@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.15'
+__version__ = '0.16'
 
 import threading
 import os
@@ -65,6 +65,9 @@ Builder.load_string("""
     SubscriptionsScreen:
         id: id_subs_scr
         name: 'subs_screen'
+    PlaylistVideosScreen:
+        id: id_playlist_videos_screen
+        name: 'playlist_videos_screen'
 
 
 <DropDown>:
@@ -143,6 +146,11 @@ Builder.load_string("""
                     app.last_btn_pressed = "watchlater"
                     root.manager.current = 'watchlater_screen' 
                     root.manager.transition.direction = 'left'
+
+<PlaylistVideosScreen>:
+    on_pre_enter: app.server_is_running()
+    on_enter: root.add_scroll_view()
+    on_leave: root.clear_scroll_view()
 
 <YoutubeThumbScreen>:
     on_pre_enter: app.server_is_running()
@@ -300,14 +308,6 @@ Builder.load_string("""
             Image:
                 size_hint: (0.4, 1.0)
                 source: './img/baseline_arrow_back_black_48dp.png' 
-            Label:
-                size_hint: (0.6, 1.0)
-                text: "Go Back"
-                halign: 'left'
-                valign: 'middle'
-                font_size: '11sp'
-                text_size: self.size
-                bold: 'true'
     Banner:
         text: root.text
     Button:
@@ -319,17 +319,72 @@ Builder.load_string("""
             app.root.transition.direction = 'left'
     
 
-<ThumbScreenHeader@Header>:
-    text: "Videos"
+<PlaylistVideosHeader@Header>:
+    text: "Playlist videos"
+    Button:
+        size_hint: (0.2, 1.0)
+        on_release:
+            app.last_btn_pressed = "refresh_button"
+            app.refresh_vids(where="playlist_thumbs")
+        BoxLayout:
+            pos: self.parent.pos
+            size: self.parent.size
+            Image:
+                size_hint: (0.4, 1.0)
+                source: './img/round_refresh_black_48dp.png' 
+
+<YoutubeThumbScreenHeader@Header>:
+    text: "Home Videos"
+    Button:
+        size_hint: (0.2, 1.0)
+        on_release:
+            app.last_btn_pressed = "refresh_button"
+            app.refresh_vids(where="ythome")
+        BoxLayout:
+            pos: self.parent.pos
+            size: self.parent.size
+            Image:
+                size_hint: (0.4, 1.0)
+                source: './img/round_refresh_black_48dp.png' 
 
 <PlaylistsHeader@Header>:
     text: "Playlists"
+    Button:
+        size_hint: (0.2, 1.0)
+        on_release:
+            app.refresh_vids(where="playlists")
+        BoxLayout:
+            pos: self.parent.pos
+            size: self.parent.size
+            Image:
+                size_hint: (0.4, 1.0)
+                source: './img/round_refresh_black_48dp.png' 
 
 <SubscriptionsHeader@Header>:
     text: "Subscriptions"
+    Button:
+        size_hint: (0.2, 1.0)
+        on_release:
+            app.refresh_vids(where="subscriptions")
+        BoxLayout:
+            pos: self.parent.pos
+            size: self.parent.size
+            Image:
+                size_hint: (0.4, 1.0)
+                source: './img/round_refresh_black_48dp.png' 
 
 <WatchLaterHeader@Header>:
     text: "Watch Later"
+    Button:
+        size_hint: (0.2, 1.0)
+        on_release:
+            app.refresh_vids(where="watch_later")
+        BoxLayout:
+            pos: self.parent.pos
+            size: self.parent.size
+            Image:
+                size_hint: (0.4, 1.0)
+                source: './img/round_refresh_black_48dp.png' 
 
 <ScrollableViewWatchLater>:
     scroll_view_wl: scroll_view_wl
@@ -413,11 +468,13 @@ Builder.load_string("""
         app.root.current = 'playback_screen'
         app.root.transition.direction = 'right'
 
-# Dynamically added to ScrollableViewPlaylists
-<PlstBtn>:
+<PlstBtn>: # Dynamically added to ScrollableViewPlaylists
     on_press: 
+        print(f"========= Pressed button: {self.text}")
+        app.last_btn_pressed = "plst_btn"
         root.select_playlist()
-        app.root.current = 'youtube_thumb_screen'
+        # app.root.current = 'youtube_thumb_screen'
+        app.root.current = 'playlist_videos_screen'
 
 
 """)
@@ -438,8 +495,14 @@ class Header(BoxLayout):
         super().__init__(**kwargs)
 
 
-class ThumbScreenHeader(Header):
-    pass
+class PlaylistVideosHeader(Header):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+
+class YoutubeThumbScreenHeader(Header):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class PlaylistsHeader(Header):
@@ -469,45 +532,44 @@ class ScrollableViewYThumbScreen(ScrollView):
         Cache the list of videos as well for later use.'''
         super().__init__(**kwargs)
         self.client_cmd = client_cmd
-        if app.last_btn_pressed == "ythome":
+        if app.last_btn_pressed == "ythome" or (app.last_screen == "youtube_thumb_screen" and app.last_btn_pressed == "refresh_button"):
             if app.home_yt_vids_have:
-                Logger.info(f"dalYinskiClient: We already have some videos saved. Retrieving from cache.")
+                Logger.info(f"dalYinskiApp: Already have Youtube home videos saved. Retrieving from cache.")
                 video_thumb_urls = app.home_yt_vids
                 self.video_urls(video_thumb_urls)
             else:
-                Logger.info(f"dalYinskiClient: No videos cached. Fetching new videos.")
+                Logger.info(f"dalYinskiApp: No Youtube home videos cached. Fetching new videos.")
                 PlaybackScreen().on_press_go_home()
                 time.sleep(1) # wait a bit for the page to load
                 self.get_thumbnails(self.client_cmd)
         elif app.last_btn_pressed == "watchlater":
             if app.watch_later_vids_have:
-                Logger.info(f"dalYinskiClient: We already have some videos saved. Retrieving from cache.")
+                Logger.info(f"dalYinskiApp: Already have Watch Later videos saved. Retrieving from cache.")
                 video_thumb_urls = app.watch_later_vids
                 self.video_urls(video_thumb_urls)
             else:
-                Logger.info(f"dalYinskiClient: No videos cached. Fetching new videos.")
+                Logger.info(f"dalYinskiApp: No Watch Later videos cached. Fetching new videos.")
                 PlaybackScreen().on_press_watch_later()
                 time.sleep(1)
                 self.client_cmd = b'getplaylistthumbnails'
                 self.get_thumbnails(self.client_cmd)
-        elif app.last_screen == "playlists_screen" or app.last_btn_pressed == "playlists":
-            ScrollableViewPlaylists()
-            if app.plstname_dict.get(app.last_plstname): # check if have previously opened the playlist
-                Logger.info(f"dalYinskiClient: We already have >>{app.last_plstname}<< videos saved. Retrieving from cache.")
-                video_thumb_urls = app.plstname_dict[app.last_plstname] # if we opened it previously, get its list from the dictionary
-                self.video_urls(video_thumb_urls)
-            else:
-                Logger.info(f"dalYinskiClient: No videos cached. Fetching new videos.")
+        elif app.last_screen == "playlists_screen":
+            if not app.plstname_dict.get(app.last_plstname) or app.last_btn_pressed == "refresh_button":
+                Logger.info(f"dalYinskiApp: No >>{app.last_plstname}<< cached. Fetching new videos.")
                 time.sleep(1)
                 self.client_cmd = b'getplaylistthumbnails'
                 self.get_thumbnails(self.client_cmd)
+            elif app.plstname_dict.get(app.last_plstname): # check if have previously opened the playlist
+                Logger.info(f"dalYinskiApp: We already have >>{app.last_plstname}<< videos saved. Retrieving from cache.")
+                video_thumb_urls = app.plstname_dict[app.last_plstname] # if we opened it previously, get its list from the dictionary
+                self.video_urls(video_thumb_urls)
         elif app.last_btn_pressed == "subscriptions":
             if app.subscriptions_vids_have:
-                Logger.info(f"dalYinskiClient: We already have some videos saved. Retrieving from cache.")
+                Logger.info(f"dalYinskiApp: Already have Subscriptions videos saved. Retrieving from cache.")
                 video_thumb_urls = app.subscriptions_vids
                 self.video_urls(video_thumb_urls)
             else:
-                Logger.info(f"dalYinskiClient: No videos cached. Fetching new videos.")
+                Logger.info(f"dalYinskiApp: No Subscriptions videos cached. Fetching new videos.")
                 PlaybackScreen().on_press_subscriptions()
                 time.sleep(1)
                 self.client_cmd = b'getsubscriptionhumbnails'
@@ -534,7 +596,9 @@ class ScrollableViewYThumbScreen(ScrollView):
         elif client_cmd == b'getplaylistthumbnails' and app.last_btn_pressed == "watchlater":
             app.watch_later_vids = video_thumb_urls
             app.watch_later_vids_have = True
-        elif client_cmd == b'getplaylistthumbnails' and app.last_btn_pressed == "playlists":
+        elif client_cmd == b'getplaylistthumbnails':
+            print(f"LST BTN {app.last_btn_pressed}")
+            print("CACHING VDS!!!")
             app.plstname_dict[app.last_plstname] = video_thumb_urls
         elif client_cmd == b'getsubscriptionhumbnails':
             app.subscriptions_vids = video_thumb_urls
@@ -632,8 +696,10 @@ class PlstBtn(Button):
         self.plstname = text
 
     def select_playlist(self):
-        app.last_plstname = self.plstname # set the last playlist name each time the button is pressed
-        if app.plstname_dict.get(app.last_plstname):
+        # set the last playlist name and its link each time the button is pressed
+        app.last_plstname_link = self.vidurl
+        app.last_plstname = self.plstname 
+        if app.plstname_dict.get(app.last_plstname) and app.last_btn_pressed != "refresh_button":
             # if we previously opened the playlist no need to retrieve it again from server, just use cached one in app.plstname_dict
             pass
         else:
@@ -643,7 +709,7 @@ class PlstBtn(Button):
     def _select_playlist(self):
         ''' Send playvideo command + video url from the list
         which gets passed in the constructor above as vidurl variable
-        so that the server can start video. '''
+        so that the server can select that playlist url. '''
         c = DalyinskiClient()
         c.command(b'playvideo' + b' ' + bytes(self.vidurl, 'utf-8'))
 
@@ -707,12 +773,28 @@ class ReconnectServerScreen(Screen):
     pass
 
 
+class PlaylistVideosScreen(Screen):
+    def add_scroll_view(self):
+        Logger.info(f"dalYinskiApp: Current screen: playlist_videos_screen; Last screen was: {app.last_screen}")
+        if app.last_screen == "playlists_screen":
+            app.last_screen = "playlists_screen"
+        else:
+            app.last_screen = "playlist_videos_screen"
+        self.add_widget(ScrollableViewYThumbScreen())
+        self.add_widget(PlaylistVideosHeader())
+
+    def clear_scroll_view(self):
+        self.clear_widgets()
+
 class YoutubeThumbScreen(Screen):
     def add_scroll_view(self):
-        self.add_widget(ScrollableViewYThumbScreen())
-        self.add_widget(ThumbScreenHeader())
         Logger.info(f"dalYinskiApp: Current screen: youtube_thumb_screen; Last screen was: {app.last_screen}")
-        app.last_screen = "youtube_thumb_screen"
+        if app.last_screen == "playlists_screen":
+            app.last_screen = "playlists_screen"
+        else:
+            app.last_screen = "youtube_thumb_screen"
+        self.add_widget(ScrollableViewYThumbScreen())
+        self.add_widget(YoutubeThumbScreenHeader())
 
     def clear_scroll_view(self):
         self.clear_widgets()
@@ -834,8 +916,49 @@ class MainApp(App):
     subscriptions_vids = []
     subscriptions_vids_have = False
 
+    last_plstname_link = None
     last_plstname = None
     plstname_dict = {}
+
+    def refresh_vids(self, where=None):
+        ''' Clear the old list of videos, then clear the widgets of current screen
+        and trigger the ScrollableViewYThumbScreen again to repopulate the screen
+        with new videos. Stupid. Works.'''
+        Logger.info(f"dalYinskiApp: Clearing playlist and refreshing...")
+        if where == "ythome":
+            app.home_yt_vids_have = False
+            app.home_yt_vids = []
+            app.root.current_screen.clear_scroll_view()
+            app.root.current = 'start_screen'
+            app.root.current = 'youtube_thumb_screen'
+        elif where == "playlists":
+            app.usr_playlists_have = False
+            app.usr_playlists = []
+            app.root.current_screen.clear_scroll_view()
+            app.root.current = 'start_screen'
+            app.root.current = 'playlists_screen'
+        elif where == "playlist_thumbs":
+            # print(f"Last playlist ## {app.last_plstname}")
+
+            # Go to playlist in the browser again to refresh the page
+            PlstBtn(app.last_plstname_link, text=str(app.last_plstname)).select_playlist()
+
+            app.plstname_dict[app.last_plstname] = None
+            app.root.current_screen.clear_scroll_view()
+            app.root.current = 'start_screen'
+            app.root.current = 'playlist_videos_screen'
+        elif where == "watch_later":
+            app.watch_later_vids_have = False
+            app.watch_later_vids = []
+            app.root.current_screen.clear_scroll_view()
+            app.root.current = 'start_screen'
+            app.root.current = 'watchlater_screen'
+        elif where == "subscriptions":
+            app.subscriptions_vids_have = False
+            app.subscriptions_vids = []
+            app.root.current_screen.clear_scroll_view()
+            app.root.current = 'start_screen'
+            app.root.current = 'subs_screen'
 
     def open_settings(self, *largs):
             pass
