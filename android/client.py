@@ -83,11 +83,11 @@ class DalyinskiClient:
         bytes_rcvd = b''
         while len(bytes_rcvd) < msg_length:
             to_read = msg_length - len(bytes_rcvd)
-            Logger.info(f"dalYinskiClient: Bytes to read: {to_read}")
-            Logger.info(f"dalYinskiClient: Bytes already read: {len(bytes_rcvd)}")
+            Logger.debug(f"dalYinskiClient: Bytes to read: {to_read}")
+            Logger.debug(f"dalYinskiClient: Bytes already read: {len(bytes_rcvd)}")
             bytes_rcvd += self.s.recv(4096 if to_read > 4096 else to_read)
             try:
-                Logger.info(f"dalYinskiClient: {str(bytes_rcvd, 'utf-8')}")
+                Logger.debug(f"dalYinskiClient: {str(bytes_rcvd, 'utf-8')}")
                 if "error" in str(bytes_rcvd, 'utf-8'):
                     return []
                     break
