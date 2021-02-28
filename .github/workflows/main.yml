@@ -112,10 +112,10 @@ jobs:
             pip install -r win-requirements.txt
 
         - name: Create folder with packaged programm
-          run: pyinstaller --noconsole --name dalyinski-${{ env.DALYINSKI_VERSION }} ./dalyinski-server.py
+          run: pyinstaller --noconsole --distpath . --name dalyinski-${{ env.DALYINSKI_VERSION }} ./dalyinski-server.py
  
         - name: Zip folder
-          run: tar.exe  -a -c -f dalyinski-${{ env.DALYINSKI_VERSION }}.zip ./dist/dalyinski-${{ env.DALYINSKI_VERSION }}
+          run: tar.exe  -a -c -f dalyinski-${{ env.DALYINSKI_VERSION }}.zip dalyinski-${{ env.DALYINSKI_VERSION }}
 
         - name: Upload packaged folder files
           id: upload-release-asset 
