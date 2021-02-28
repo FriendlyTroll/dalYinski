@@ -115,7 +115,7 @@ jobs:
           run: pyinstaller --noconsole --name dalyinski-${{ env.DALYINSKI_VERSION }} ./dalyinski-server.py
  
         - name: Zip folder
-          run: tar.exe  -a -c -f dalyinski-${{ env.DALYINSKI_VERSION }}.zip dalyinski-${{ env.DALYINSKI_VERSION }}
+          run: tar.exe  -a -c -f dalyinski-${{ env.DALYINSKI_VERSION }}.zip ./dist/dalyinski-${{ env.DALYINSKI_VERSION }}
 
         - name: Upload packaged folder files
           id: upload-release-asset 
@@ -124,7 +124,7 @@ jobs:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
               upload_url: ${{ needs.debian-build.outputs.output_url }} # Get url from the output of previous job (debian build) above
-              asset_path: ./dist/dalyinski-${{ env.DALYINSKI_VERSION }}.zip
+              asset_path: dalyinski-${{ env.DALYINSKI_VERSION }}.zip
               asset_name: dalyinski-${{ env.DALYINSKI_VERSION }}.zip
               asset_content_type: application/zip
  
