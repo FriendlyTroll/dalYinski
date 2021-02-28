@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 # BUG: If the browser is minimized nothing gets sent to client
-__version__ = 0.15
+__version__ = 0.16
 
 import socket
 import time
@@ -331,9 +331,11 @@ class ServerConn:
                            print(type(e), e)
 
                        # stuff we're going to send to client
-                       elem_img = self.bro.find_elements_by_xpath('//ytd-thumbnail[@class="style-scope ytd-rich-grid-media"]/a[@id="thumbnail"]/yt-img-shadow[1]/img[@id="img"]')
-                       elem_txt_href = self.bro.find_elements_by_xpath('//div[@id="dismissable"][@class="style-scope ytd-rich-grid-media"]/div[@id="details"]/div[@id="meta"]/h3[1]/a[@id="video-title-link"]')
+                       elem_img = self.bro.find_elements_by_xpath('//ytd-thumbnail[@class="style-scope ytd-rich-grid-media"]/a[@id="thumbnail"]/yt-img-shadow/img[@id="img"]')
+                       elem_txt_href = self.bro.find_elements_by_xpath('//div[@id="details"]/div[@id="meta"]/h3/a[@id="video-title-link"]')
 
+                       # print(f"### {elem_img}")
+                       # print(f"$$$ {elem_txt_href}")
                        self.zip_lists(elem_img, elem_txt_href)
                        try:
                            # scroll back to top of page
