@@ -15,7 +15,7 @@ on:
   #  branches: [ dev ]
 
 env:
-  DALYINSKI_VERSION: 0.16
+  DALYINSKI_VERSION: 0.17
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -76,10 +76,14 @@ jobs:
             pip install pyinstaller
             pip install -r win-requirements.txt
 
-        - name: Create exe file
+        - name: Create exe single binary file
           run: pyinstaller --onefile --noconsole --name dalyinski-${{ env.DALYINSKI_VERSION }}.exe ./dalyinski-server.py
 
-        - name: Upload Release Asset
+        - name: Create folder with packaged programm
+          run: pyinstaller --noconsole --name dalyinski-${{ env.DALYINSKI_VERSION }} ./dalyinski-server.py
+
+
+        - name: Upload exe binary
           id: upload-release-asset 
           uses: actions/upload-release-asset@v1
           env:
@@ -89,4 +93,15 @@ jobs:
               asset_path: ./dist/dalyinski-${{ env.DALYINSKI_VERSION }}.exe
               asset_name: dalyinski-${{ env.DALYINSKI_VERSION }}.exe
               asset_content_type: application/vnd.microsoft.portable-executable
+ 
+        - name: Upload packaged folder files
+          id: upload-release-asset 
+          uses: actions/upload-release-asset@v1
+          env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+              upload_url: ${{ needs.debian-build.outputs.output_url }} # Get url from the output of previous job (debian build) above
+              asset_path: ./dist/dalyinski-${{ env.DALYINSKI_VERSION }}
+              asset_name: dalyinski-${{ env.DALYINSKI_VERSION }}
+              # asset_content_type: application/vnd.microsoft.portable-executable
  
