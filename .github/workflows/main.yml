@@ -77,7 +77,7 @@ jobs:
             pip install -r win-requirements.txt
 
         - name: Create exe single binary file
-          run: pyinstaller --onefile --noconsole --name dalyinski-${{ env.DALYINSKI_VERSION }}.exe ./dalyinski-server.py
+          run: pyinstaller --onefile --noconsole --icon screenshots/icon3.ico --name dalyinski-${{ env.DALYINSKI_VERSION }}.exe ./dalyinski-server.py
 
         - name: Create folder with packaged programm
           run: pyinstaller --noconsole --name dalyinski-${{ env.DALYINSKI_VERSION }} ./dalyinski-server.py
@@ -112,7 +112,7 @@ jobs:
             pip install -r win-requirements.txt
 
         - name: Create folder with packaged programm
-          run: pyinstaller --noconsole --distpath . --name dalyinski-${{ env.DALYINSKI_VERSION }} ./dalyinski-server.py
+          run: pyinstaller --noconsole --distpath . --icon screenshots/icon3.ico --name dalyinski-${{ env.DALYINSKI_VERSION }} ./dalyinski-server.py
  
         - name: Zip folder
           run: tar.exe  -a -c -f dalyinski-${{ env.DALYINSKI_VERSION }}.zip dalyinski-${{ env.DALYINSKI_VERSION }}
