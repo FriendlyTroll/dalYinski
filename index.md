@@ -1,7 +1,7 @@
 ---
 readme: https://github.com/FriendlyTroll/dalYinski/blob/master/README.md
-win_url: https://github.com/FriendlyTroll/dalYinski/releases/download/v0.13/dalyinski-0.13.exe
-ubuntu_url: https://github.com/FriendlyTroll/dalYinski/releases/download/v0.13/dalyinski-0.13.deb
+win_url: https://github.com/FriendlyTroll/dalYinski/releases/download/v0.16/dalyinski-0.16.exe
+ubuntu_url: https://github.com/FriendlyTroll/dalYinski/releases/download/v0.16/dalyinski-0.16.deb
 ---
 
 ## Instructions:
