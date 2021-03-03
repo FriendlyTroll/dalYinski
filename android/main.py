@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.16'
+__version__ = '0.18'
 
 import threading
 import os
@@ -87,7 +87,6 @@ Builder.load_string("""
             size_hint: (1, 0.08)
             Spinner:
                 id: start_scr_spinner
-                text: 'Menu'
                 size_hint: (0.2, 1.0)
                 values: ("Rediscover server", "Open browser", "About")
                 on_text:
@@ -95,6 +94,11 @@ Builder.load_string("""
                     elif start_scr_spinner.text  == "About": root.show_about()
                     elif start_scr_spinner.text  == "Open browser": root.on_press_open_browser()
                     else: pass
+                BoxLayout:
+                    pos: self.parent.pos
+                    size: self.parent.size
+                    Image:
+                        source: './img/baseline_menu_black_48dp.png' 
             Label:
                 size_hint: (0.8, 1.0)
                 text: "dalYinski YT remote"
@@ -105,12 +109,16 @@ Builder.load_string("""
                         pos: self.pos
                         size: self.size
             Button:
-                text: "Playback"
                 size_hint: (0.2, 1.0)
                 on_release:
                     app.last_btn_pressed = "playback"
                     app.root.current = 'playback_screen'
                     app.root.transition.direction = 'left'
+                BoxLayout:
+                    pos: self.parent.pos
+                    size: self.parent.size
+                    Image:
+                        source: './img/baseline_settings_remote_black_48dp.png' 
                 
         BoxLayout:
             ######################
@@ -311,12 +319,16 @@ Builder.load_string("""
     Banner:
         text: root.text
     Button:
-        text: "Playback"
         size_hint: (0.2, 1.0)
         on_release:
             app.last_btn_pressed = "playback"
             app.root.current = 'playback_screen'
             app.root.transition.direction = 'left'
+        BoxLayout:
+            pos: self.parent.pos
+            size: self.parent.size
+            Image:
+                source: './img/baseline_settings_remote_black_48dp.png' 
     
 
 <PlaylistVideosHeader@Header>:
@@ -463,17 +475,20 @@ Builder.load_string("""
                 self.play_video(root.video_link)
 
 <YTPlay>:
-    text: "Play"
     on_release: 
         app.root.current = 'playback_screen'
         app.root.transition.direction = 'right'
+    BoxLayout:
+        pos: self.parent.pos
+        size: self.parent.size
+        Image:
+            source: './img/outline_play_circle_outline_black_48.png' 
 
 <PlstBtn>: # Dynamically added to ScrollableViewPlaylists
     on_press: 
         print(f"========= Pressed button: {self.text}")
         app.last_btn_pressed = "plst_btn"
         root.select_playlist()
-        # app.root.current = 'youtube_thumb_screen'
         app.root.current = 'playlist_videos_screen'
 
 
@@ -587,6 +602,7 @@ class ScrollableViewYThumbScreen(ScrollView):
         self.pf.open()
 
         video_thumb_urls = c.recv_thumb_list(client_cmd)
+        Logger.debug(f"dalYinskiApp: video_thumb_urls {video_thumb_urls}")
         self.video_urls(video_thumb_urls)
 
         # cache video lists
@@ -617,6 +633,7 @@ class ScrollableViewYThumbScreen(ScrollView):
                 loop_video_data_dict["image_desc"] = thumb[0]
                 loop_video_data_dict["video_link"] = thumb[2]
                 self.video_list.append(loop_video_data_dict)
+                Logger.debug(f"dalYinskiApp: Video list {self.video_list}")
         except IndexError as e:
             Logger.info(f"dalYinskiApp: {type(e)} {e}")
 
@@ -789,10 +806,11 @@ class PlaylistVideosScreen(Screen):
 class YoutubeThumbScreen(Screen):
     def add_scroll_view(self):
         Logger.info(f"dalYinskiApp: Current screen: youtube_thumb_screen; Last screen was: {app.last_screen}")
-        if app.last_screen == "playlists_screen":
-            app.last_screen = "playlists_screen"
-        else:
-            app.last_screen = "youtube_thumb_screen"
+        # if app.last_screen == "playlists_screen":
+        #     app.last_screen = "playlists_screen"
+        # else:
+        #     app.last_screen = "youtube_thumb_screen"
+        app.last_screen = "youtube_thumb_screen"
         self.add_widget(ScrollableViewYThumbScreen())
         self.add_widget(YoutubeThumbScreenHeader())
 
