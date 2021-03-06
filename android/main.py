@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.18'
+__version__ = '0.19'
 
 import threading
 import os
@@ -750,7 +750,8 @@ class StartScreen(Screen):
         auto_dismiss=True)
         popup.open()
         Logger.debug(f"dalYinskiApp: {self.parent.ids}")
-        self.parent.ids.id_start_scr.start_scr_spinner.text = 'Menu'
+        # set spinner text to empty string so that it doesn't show text under icon
+        self.parent.ids.id_start_scr.start_scr_spinner.text = '' 
 
     def on_press_open_browser(self):
         ''' Threading function to call the "real" function '''
@@ -784,7 +785,7 @@ class ConnectServerScreen(Screen):
         t.start()
 
     def change_start_scr_spinner_txt(self):
-        self.parent.ids.id_start_scr.start_scr_spinner.text = 'Menu'
+        self.parent.ids.id_start_scr.start_scr_spinner.text = ''
 
 class ReconnectServerScreen(Screen):
     pass
