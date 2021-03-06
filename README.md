@@ -24,10 +24,10 @@ You should now be able to browse videos with the Android app.
 **Make sure the Firefox window remains open while you are using the app!**
 
 # Screenshots
-<img src="screenshots/main.png" width=200 height=400>
-<img src="screenshots/browse.png" width=200 height=400>
-<img src="screenshots/playback.png" width=200 height=400>
-<img src="screenshots/playlists.png" width=200 height=400>
+<img src="screenshots/Screenshot_20210306-113503.png" width=200 height=400>
+<img src="screenshots/Screenshot_20210306-113510.png" width=200 height=400>
+<img src="screenshots/Screenshot_20210306-114735.png" width=200 height=400>
+<img src="screenshots/Screenshot_(Mar_6,_2021_12_40_49).png" width=200 height=400>
 
 # Development Dependencies
 ## Linux
