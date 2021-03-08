@@ -32,9 +32,12 @@ readme: https://github.com/FriendlyTroll/dalYinski/blob/master/README.md
 
     To avoid the above issue (mostly), download the zipped folder, unzip it, find and run the dalyinski exe file that way. You can move this folder anywhere and create a shortcut to .exe on your desktop if you wish.
 
-4. Install Android app
+4. Install Android app 
+
+<a href='https://play.google.com/store/apps/details?id=org.dalyinski.dalyinski&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width="200" /></a>
+
 5. In server app click on "Start server and open browser"
-6. In the app tap "Connect to server" and wait a bit.
+6. In the Android app tap "Connect to server" and wait a bit.
 
 You should now be able to browse videos with the Android app.
 
