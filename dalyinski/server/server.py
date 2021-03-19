@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 # BUG: If the browser is minimized nothing gets sent to client
-__version__ = 1.0
+__version__ = 1.1
 
 import socket
 import time
@@ -438,6 +438,49 @@ class ServerConn:
                    except Exception as e:
                        print("getplaylists exception: ", type(e), e)
                        self.conn.sendall(b"!! getplaylists errored out!")
+               elif "getmychplst" in self.data:
+                   print("getmychplst received")
+                   try:
+                       try:
+                           # Expand Show more; this is the 2nd element in the list, the first is Watch Later, user's playlists etc.
+                           self.bro.find_elements_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]')[1].click()
+                       except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException) as e:
+                           try:
+                               print("Show more exception: ", type(e), e)
+                               # Open hamburger menu and locate the element
+                               self.bro.find_element_by_xpath('//yt-icon[@id="guide-icon"][@class="style-scope ytd-masthead"][@icon="yt-icons:menu"]').click()
+                               time.sleep(1) # wait a bit
+                               self.bro.find_elements_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]')[1].click()
+                           except (exceptions.ElementNotInteractableException, exceptions.ElementClickInterceptedException) as e:
+                               print("The list of channels is probably already expanded. Got exception: ", type(e), e)
+                               # simply move on to getting the channels below
+                               pass
+
+                       channel_elements_lst = self.bro.find_elements_by_xpath('//div[@id="sections"]/ytd-guide-section-renderer[2]/div[@id="items"][@class="style-scope ytd-guide-section-renderer"]/ytd-guide-entry-renderer/a[@id="endpoint"][@class="yt-simple-endpoint style-scope ytd-guide-entry-renderer"]')
+                       # Rest of collapsible elements 
+                       channel_collaps_entries = self.bro.find_elements_by_xpath('//ytd-guide-collapsible-entry-renderer/div[@id="expanded"]/div[@id="expandable-items"]/ytd-guide-entry-renderer/a[@id="endpoint"][@class="yt-simple-endpoint style-scope ytd-guide-entry-renderer"]')
+
+                       channel_lst = [] # combo of above 2 lists, a list of tuples of playlist name and link
+                       for channel in channel_elements_lst:
+                           try:
+                               channel_lst.append((channel.get_attribute("title"), channel.get_attribute("href")))
+                           except Exception as e:
+                               print("channel_lst EXCEPTION: ", e)
+
+                       for channel in channel_collaps_entries:
+                           try:
+                               channel_lst.append((channel.get_attribute("title"), channel.get_attribute("href")))
+                           except Exception as e:
+                               print("channel collaps_entries EXCEPTION: ", e)
+
+                       msg = pickle.dumps(channel_lst)
+                       print("Pickled msg lenght is: ", len(msg))
+                       self.send_url_list(self.conn, msg)
+                       print("DATA SENT!!!...")
+                   except Exception as e:
+                       print("getmychplst exception: ", type(e), e)
+                       self.conn.sendall(b"!! getmychplst errored out!")
+
                elif "playvideo" in self.data:
                    print("playvideo received")
                    try:
@@ -445,6 +488,16 @@ class ServerConn:
                        self.bro.get(self.data.split()[1])
                    except Exception as e:
                        print("playvideo EXCEPTION: ", e)
+
+               elif "playchannelvideo" in self.data:
+                   print("playchannelvideo received")
+                   try:
+                       self.bro.get(self.data.split()[1])
+                       time.sleep(1)
+                       # click on Videos tab
+                       self.bro.find_elements_by_xpath('//div[@id="tabsContent"]/tp-yt-paper-tab')[1].click()
+                   except Exception as e:
+                       print("playchannelvideo EXCEPTION: ", e)
 
                elif "subscriptions" in self.data:
                    print("subscriptions received")
@@ -462,6 +515,7 @@ class ServerConn:
                        ActionChains(self.bro).send_keys_to_element(self.bro.find_element_by_xpath('//div[@class="ytp-left-controls"]'), Keys.ARROW_UP).perform()
                    except Exception as e:
                        print("volup EXCEPTION: ", e)
+
                elif "voldown" in self.data:
                    print("voldown received")
                    try:
