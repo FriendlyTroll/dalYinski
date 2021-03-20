@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '1.1'
+__version__ = '1.2'
 
 import threading
 import os
@@ -610,6 +610,7 @@ class ScrollableViewYThumbScreen(ScrollView):
         Cache the list of videos as well for later use.'''
         super().__init__(**kwargs)
         self.client_cmd = client_cmd
+        self.channel_cache = False
         print(f"LST BTN {app.last_btn_pressed}")
         print(f"Last screen: {app.last_screen}")
         if app.last_btn_pressed == "ythome" or (app.last_screen == "youtube_thumb_screen" and app.last_btn_pressed == "refresh_button"):
