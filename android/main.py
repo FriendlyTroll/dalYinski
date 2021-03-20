@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '1.2'
+__version__ = '1.3'
 
 import threading
 import os
@@ -32,7 +32,7 @@ from kivy.uix.recycleview import RecycleView
 from client import DalyinskiClient
 
 # Load configuration file
-store = JsonStore('settings.json')
+store = JsonStore('../settings.json')
 if store.exists('connection'):
     have_ip = store.get('connection')['ip']
 else:

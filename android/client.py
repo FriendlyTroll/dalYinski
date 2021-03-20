@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = 1.0
+__version__ = 1.1
 
 import socket
 import pickle
@@ -16,7 +16,7 @@ BROWSER_OPEN = False
 class DalyinskiClient:
     def __init__(self):
         # Load configuration file
-        store = JsonStore('settings.json')
+        store = JsonStore('../settings.json')
         if store.exists('connection'):
             have_ip = store.get('connection')['ip']
             HOST = have_ip # The server's hostname or IP address
