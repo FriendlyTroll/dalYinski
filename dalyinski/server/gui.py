@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 
-__version__ = 1.0
+__version__ = 1.1
 
 import wx
 import wx.adv
 
 from dalyinski.server.server import ServerConn
+from dalyinski.server.server import __version__ as serverversion
 
 class WinFrame(wx.Frame):
     def __init__(self):
-        super().__init__(parent=None, title="dalYinski server", size=(210, 150))
+        super().__init__(parent=None, title="dalYinski server", size=(260, 150))
         status_bar = self.CreateStatusBar(style=wx.STB_DEFAULT_STYLE, id=-1, name="statusbar")
-        status_bar.SetStatusText(f"GUI version: {__version__}")
+        status_bar.SetStatusText(f"GUI version: {__version__} || Server version: {serverversion}")
 
         self.server = ServerConn()
 
