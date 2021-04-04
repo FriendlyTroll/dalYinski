@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '1.3'
+__version__ = '1.4'
 
 import threading
 import os
@@ -170,18 +170,21 @@ Builder.load_string("""
                     root.manager.transition.direction = 'left'
 
 <PlaylistVideosScreen>:
-    on_pre_enter: app.server_is_running()
-    on_enter: root.add_scroll_view()
+    on_pre_enter:
+        app.server_is_running()
+        root.add_scroll_view()
     on_leave: root.clear_scroll_view()
 
 <YoutubeThumbScreen>:
-    on_pre_enter: app.server_is_running()
-    on_enter: root.add_scroll_view()
+    on_pre_enter: 
+        app.server_is_running()
+        root.add_scroll_view()
     on_leave: root.clear_scroll_view()
 
 <SubscriptionsScreen>:
-    on_pre_enter: app.server_is_running()
-    on_enter: root.add_scroll_view()
+    on_pre_enter:
+        app.server_is_running()
+        root.add_scroll_view()
     on_leave: root.clear_scroll_view()
 
 <ConnectServerScreen>:
@@ -205,29 +208,28 @@ Builder.load_string("""
                 root.manager.transition.direction = 'left'
 
 <WatchLaterScreen>:
-    on_pre_enter: app.server_is_running()
-    on_enter: root.add_scroll_view()
-    on_leave: 
-        root.clear_scroll_view()
-
+    on_pre_enter:
+        app.server_is_running()
+        root.add_scroll_view()
+    on_leave: root.clear_scroll_view()
 
 <PlaylistsScreen>:
-    on_pre_enter: app.server_is_running()
-    on_enter: root.add_scroll_view()
-    on_leave: 
-        root.clear_scroll_view()
+    on_pre_enter:
+        app.server_is_running()
+        root.add_scroll_view()
+    on_leave: root.clear_scroll_view()
 
 <MyChannelsScreen>:
-    on_pre_enter: app.server_is_running()
-    on_enter: root.add_scroll_view()
-    on_leave: 
-        root.clear_scroll_view()
+    on_pre_enter:
+        app.server_is_running()
+        root.add_scroll_view()
+    on_leave: root.clear_scroll_view()
 
 <ChannelVideosScreen>:
-    on_pre_enter: app.server_is_running()
-    on_enter: root.add_scroll_view()
-    on_leave: 
-        root.clear_scroll_view()
+    on_pre_enter:
+        app.server_is_running()
+        root.add_scroll_view()
+    on_leave: root.clear_scroll_view()
 
 <ReconnectServerScreen@ConnectServerScreen>:
 
