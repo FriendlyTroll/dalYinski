@@ -63,6 +63,5 @@ Install from win-requirements.txt.
     pip3 install -r requirements.txt
 
 # Icons and resources used
-* Android icon: "File:B&W YouTube icon.png" by Rodrigo.Argenton is licensed under CC0 1.0
-* Other icons: https://material.io/resources/icons/?style=baseline
+* Icons: https://material.io/resources/icons/?style=baseline
 
