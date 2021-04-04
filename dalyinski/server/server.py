@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 # BUG: If the browser is minimized nothing gets sent to client
-__version__ = 1.1
+__version__ = 1.2
 
 import socket
 import time
@@ -502,7 +502,7 @@ class ServerConn:
                elif "subscriptions" in self.data:
                    print("subscriptions received")
                    try:
-                      self.bro.find_element_by_xpath("//a[@id='endpoint'][@href='/feed/subscriptions']/paper-item/yt-icon").click()
+                      self.bro.find_element_by_xpath("//a[@id='endpoint'][@href='/feed/subscriptions']/tp-yt-paper-item/yt-icon").click()
                    except Exception as e:
                        print("subscriptions EXCEPTION: ", type(e), e)
                        # Open hamburger menu and locate the element
