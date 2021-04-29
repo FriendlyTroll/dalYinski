@@ -16,10 +16,10 @@ readme: https://github.com/FriendlyTroll/dalYinski/blob/master/README.md
     [Ubuntu server app](https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ page.version }}/dalyinski-{{ page.version }}.deb)
 
     ![win image]({{ site.github.url }}/assets/win10.png)
-    [Windows server app (single .exe file) - see NOTE below](https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ page.version }}/dalyinski-{{ page.version }}.zip)
+    [Windows server app (single .exe file) - see NOTE below](https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ page.version }}/dalyinski-{{ page.version }}.exe)
 
     ![win image]({{ site.github.url }}/assets/win10.png)
-    [Windows server app (zipped folder)](https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ page.version }}/dalyinski-{{ page.version }}.exe)
+    [Windows server app (zipped folder)](https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ page.version }}/dalyinski-{{ page.version }}.zip)
 
     If you get a Windows Defender firewall window, check the box "Private networks, such as my home or work network" to allow the program to communicate with mobile app over your home network and check for updates.
 
