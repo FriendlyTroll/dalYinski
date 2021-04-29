@@ -1,8 +1,5 @@
 ---
 version: 1.3
-win_url_bin: https://github.com/FriendlyTroll/dalYinski/releases/download/v1.2/dalyinski-1.2.exe
-win_url_zip: https://github.com/FriendlyTroll/dalYinski/releases/download/v1.2/dalyinski-1.2.zip
-ubuntu_url: https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ page.version }}/dalyinski-{{ page.version }}.deb
 readme: https://github.com/FriendlyTroll/dalYinski/blob/master/README.md
 ---
 
@@ -16,13 +13,13 @@ readme: https://github.com/FriendlyTroll/dalYinski/blob/master/README.md
 3. Download and install server part for your Operating System
 
     ![ubuntu image]({{ site.github.url }}/assets/ubuntu-icon.png)
-    [Ubuntu server app]({{ page.ubuntu_url }})
+    [Ubuntu server app](https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ page.version }}/dalyinski-{{ page.version }}.deb)
 
     ![win image]({{ site.github.url }}/assets/win10.png)
-    [Windows server app (single .exe file) - see NOTE below]({{ page.win_url_bin }})
+    [Windows server app (single .exe file) - see NOTE below](https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ page.version }}/dalyinski-{{ page.version }}.zip)
 
     ![win image]({{ site.github.url }}/assets/win10.png)
-    [Windows server app (zipped folder)]({{ page.win_url_zip }})
+    [Windows server app (zipped folder)](https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ page.version }}/dalyinski-{{ page.version }}.exe)
 
     If you get a Windows Defender firewall window, check the box "Private networks, such as my home or work network" to allow the program to communicate with mobile app over your home network and check for updates.
 
