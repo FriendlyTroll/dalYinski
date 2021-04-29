@@ -3,7 +3,7 @@
 # BUG: Message: Browsing context has been discarded, when you switch tabs then return to youtube
 # BUG: Handle clicking immediately on fullscreen button
 # BUG: If the browser is minimized nothing gets sent to client
-__version__ = 1.2
+__version__ = 1.3
 
 import socket
 import time
@@ -400,14 +400,14 @@ class ServerConn:
                    try:
                        try:
                            # expand "Show more" first
-                           self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
+                           self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/tp-yt-paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
                        except (exceptions.ElementNotInteractableException, exceptions.NoSuchElementException) as e:
                            try:
                                print("Show more exception: ", type(e), e)
                                # Open hamburger menu and locate the element
                                self.bro.find_element_by_xpath('//yt-icon[@id="guide-icon"][@class="style-scope ytd-masthead"][@icon="yt-icons:menu"]').click()
                                time.sleep(1) # wait a bit
-                               self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
+                               self.bro.find_element_by_xpath('//ytd-guide-entry-renderer[@id="expander-item"]/a[@id="endpoint"]/tp-yt-paper-item/yt-icon[@class="guide-icon style-scope ytd-guide-entry-renderer"]').click()
                            except (exceptions.ElementNotInteractableException, exceptions.ElementClickInterceptedException) as e:
                                print("The list of playlists is probably already expanded. Got exception: ", type(e), e)
                                # simply move on to getting the videos below
