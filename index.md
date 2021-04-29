@@ -2,7 +2,7 @@
 version: 1.3
 win_url_bin: https://github.com/FriendlyTroll/dalYinski/releases/download/v1.2/dalyinski-1.2.exe
 win_url_zip: https://github.com/FriendlyTroll/dalYinski/releases/download/v1.2/dalyinski-1.2.zip
-ubuntu_url: https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ version }}/dalyinski-1.2.deb
+ubuntu_url: https://github.com/FriendlyTroll/dalYinski/releases/download/v{{ page.version }}/dalyinski-{{ page.version }}.deb
 readme: https://github.com/FriendlyTroll/dalYinski/blob/master/README.md
 ---
 
