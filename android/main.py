@@ -308,7 +308,9 @@ Builder.load_string("""
                 id: btn_fullscreen
                 text: 'Fullscreen'
                 pos_hint: {'center_x': .5, 'center_y': .5}
-                on_press: root.on_press_fullscreen()
+                on_press: 
+                    if app.in_fullscreen: root.on_press_fullscreen(); app.in_fullscreen = False
+                    else: root.on_press_fullscreen(); app.in_fullscreen = True
 
 <Banner>: # Label class
     size_hint: (0.6, 1.0)
